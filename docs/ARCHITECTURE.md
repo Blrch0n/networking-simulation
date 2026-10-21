@@ -42,3 +42,7 @@ The four-router FRRouting lab remains under `lab/`. Local-only allowlists expose
 `tests/test_planning.py`: hand-checkable MST, Tarjan/Dijkstra vs NetworkX over seeded small graphs, full original single-cut coverage, infeasible/empty graphs, request validation, 23-node API and security boundary. `tests/web_demo.mjs`: independent browser core, editing, deleted route source, malformed/blocked storage, original exhaustive cuts, and Python parity for original/edited/small datasets. New measurements: `docs/planning-results.json` and `docs/planning-performance.json`. Earlier `measurements.json`, screenshots and `RESULTS_LEGACY_ARCHIVE.md` document prior versions only.
 
 Primary references: https://leafletjs.com/reference.html (default SVG paths), https://networkx.org/documentation/stable/ (reference graph operations), https://vercel.com/docs/cli/deploy (existing-project CLI deployment).
+
+## Planning workspace ба алгоритмын тайлбар
+
+`main.tsx` нь design / route / experiment view-г удирдаж, нэг Leaflet instance-ийг хадгална. `walkthrough.ts` нь React-оос тусдаа deterministic Kruskal ба Dijkstra snapshot үүсгэнэ; `Walkthrough.tsx` нь алхам, буцах, эцсийн үр дүн, slider болон зайн хүснэгтийг үзүүлнэ. `NetworkMap` нь тайлбарын overlay, баталгаажсан хотууд, candidate кабель болон өмнөх маршрутын цэгэн шугамыг зурна. Overlay нь `graph.ts`-ийн тооцоо эсвэл backend-ийн суурь загварыг өөрчлөхгүй. Тестээр trace-ийн эцсийн кабель/маршрутыг бодит тооцоотой тулгана.
