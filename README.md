@@ -86,3 +86,5 @@ Docker эрхгүй бол өөрийн терминалд `sudo docker compose 
 Одоо байгаа `networking-simulation` project, root `./`, config [vercel.json](vercel.json)-ийг хадгалсан. Динамик browser алгоритм нь edited графын бүх сүлжээ, failure, comparison, verification-ийг сервергүй тооцоолно. Нэмэлт cloud database/secret хэрэггүй. Нийтлэх ба локал статик тест: [docs/VERCEL.md](docs/VERCEL.md).
 
 Өгөгдлийг дахин бэлтгэх: `.venv/bin/python scripts/acquire.py` (cache-тай), дараа нь `.venv/bin/python scripts/export_web_demo.py`. Архитектур: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+Зардлын харьцуулалт: засварлах боломжтой USD/км таамаглалаар эрүүл гурван загварын нийт өртөг, MST-ээс нэмэгдэх өртөг болон уртын графикийг харуулна. Анхны $20,000/км нь үнийн санал биш; тусдаа тоног төхөөрөмж, ашиглалт, татварыг оруулаагүй.

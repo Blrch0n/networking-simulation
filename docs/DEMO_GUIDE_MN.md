@@ -12,3 +12,5 @@ Live: https://networking-simulation-beta.vercel.app/. Локал: `make setup &&
 8. **6:10–7:00 — Optional real OSPF.** Зөвхөн локал lab үнэхээр available, `make lab-check` passed бол хөрш/route/loopback ping, cut/restore үзүүл. Docker permission denied бол «бодит lab шалгалт skipped» гэж хэл. Графын нөөц замыг жинхэнэ FRR convergence/ping гэж бүү танилцуул. Vercel дээр real lab товч зориуд байхгүй.
 
 Шинэ хэмжилт: `docs/planning-results.json`, `docs/planning-performance.json`. Хуучин 28-кабелийн screenshot/measurements нь архив бөгөөд одоогийн алгоритмын үр дүн биш.
+
+Зардлыг үзүүлэхдээ «Зардлын харьцуулалт»-ыг нээж USD/км утгыг өөрчил. Нийт өртөг = эрүүл загварын урт × үнэ; анхны $20,000/км нь жишээ таамаглал. Логарифм масштаб зөвхөн уртын баганын дүрслэлийг өөрчилнө.
