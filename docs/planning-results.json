@@ -1,0 +1,56 @@
+{
+  "measured_at": "2026-10-21T04:24:45.716Z",
+  "node_version": "v26.8.2",
+  "browser_graph_total_ms": 230.32372099999998,
+  "parity_cases": 51,
+  "topologies": {
+    "mst": {
+      "cables": 21,
+      "length_km": 3952.28637837299,
+      "bridges": 21,
+      "normal_max_rtt_ms": 27.235453504596993,
+      "max_pair": [
+        "choibalsan",
+        "ulaangom"
+      ],
+      "tests": 21,
+      "connected": 0,
+      "disconnected": 21,
+      "worst_rtt_ms": null,
+      "worst_edge": null,
+      "all_passed": false
+    },
+    "resilient": {
+      "cables": 29,
+      "length_km": 6338.166619443189,
+      "bridges": 0,
+      "normal_max_rtt_ms": 20.78005715065731,
+      "max_pair": [
+        "choibalsan",
+        "ulaangom"
+      ],
+      "tests": 29,
+      "connected": 29,
+      "disconnected": 0,
+      "worst_rtt_ms": 24.636706951311513,
+      "worst_edge": "altai--bayankhongor",
+      "all_passed": true
+    },
+    "mesh": {
+      "cables": 231,
+      "length_km": 152750.58239259003,
+      "bridges": 0,
+      "normal_max_rtt_ms": 18.098318024442197,
+      "max_pair": [
+        "choibalsan",
+        "olgii"
+      ],
+      "tests": 231,
+      "connected": 231,
+      "disconnected": 0,
+      "worst_rtt_ms": 18.098997123356238,
+      "worst_edge": "choibalsan--olgii",
+      "all_passed": true
+    }
+  }
+}

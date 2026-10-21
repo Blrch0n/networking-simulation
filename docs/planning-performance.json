@@ -1,0 +1,16 @@
+{
+  "measured_at": "2026-10-21T04:24:48Z",
+  "python": "3.14.7",
+  "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44",
+  "samples": 15,
+  "planner_ms": {
+    "median": 40.924191999692994,
+    "max": 58.787587000551866
+  },
+  "local_api_testclient_ms": {
+    "median": 70.8009519994448,
+    "max": 134.7629540005073
+  },
+  "peak_process_rss_kib": 91620,
+  "method": "Uncached edited-graph calculation; TestClient includes validation and JSON serialization, not internet/browser latency."
+}

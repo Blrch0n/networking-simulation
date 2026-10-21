@@ -222,4 +222,18 @@ class LinkState(BaseModel):up:bool
 def lab_link(link:str,body:LinkState):
     try:return lab.state(link,body.up)
     except (RuntimeError,OSError,ValueError,lab.subprocess.SubprocessError) as e:raise HTTPException(503,str(e))
+# Edited-graph planner for the minimal academic UI; legacy scenario/lab APIs remain.
+from . import planning
+class PlanningInput(BaseModel):
+    graph:dict
+    topology:Literal['mst','resilient','mesh']='resilient'
+    source:str=''
+    destination:str=''
+    failed_id:str|None=None
+    verify:bool=False
+@app.post('/api/planning/analyze')
+def analyze_planning(body:PlanningInput):
+    try:return planning.analyze(body.graph,body.topology,body.source,body.destination,body.failed_id,body.verify)
+    except (ValueError,KeyError,TypeError) as ex:raise HTTPException(422,str(ex))
+
 if (engine.ROOT/'frontend/dist').exists():app.mount('/',StaticFiles(directory=engine.ROOT/'frontend/dist',html=True),name='frontend')

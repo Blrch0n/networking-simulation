@@ -1,51 +1,39 @@
-# Vercel deployment
+# Existing Vercel deployment
 
-Vercel hosts the **browser planning demo**. The existing localhost FastAPI + SQLite + FRR stack remains available via `make demo` and `make lab-up`.
+Production: https://networking-simulation-beta.vercel.app/
 
-## Import from GitHub
+Existing project `networking-simulation`, scope `bolroos-projects`, project ID `prj_qIzQeolhMIYWIGuPTswXuKL2gn3w`. Reuse this project; do not create a second project or a new repository.
 
-1. Open https://vercel.com/new and import `Blrch0n/networking-simulation`.
-2. Keep **Root Directory** at the repository root (`./`), not `frontend`.
-3. The committed `vercel.json` sets the build configuration:
-   - Install: `npm ci --prefix frontend`
-   - Build: `VITE_STATIC_DEMO=1 npm run build --prefix frontend`
-   - Output: `frontend/dist`
-4. Deploy. No database, paid service, secret environment variables or Python runtime is needed for the hosted demo.
+`vercel.json` is unchanged:
 
-## CLI
+- Root directory: repository root (`./`).
+- Framework: Vite; Node 24.x on the inspected project.
+- Install: `npm ci --prefix frontend`.
+- Build: `VITE_STATIC_DEMO=1 npm run build --prefix frontend`.
+- Output: `frontend/dist`.
+
+Authenticated one-time update:
 
 ```bash
-cd /home/aswer/Downloads/network_simulation
-npx vercel login
-npx vercel --prod
+npx vercel deploy --prod --yes --project prj_qIzQeolhMIYWIGuPTswXuKL2gn3w --scope bolroos-projects --verify
 ```
 
-Select the repository root and use the committed configuration. Subsequent pushes deploy automatically if you imported/connected the GitHub repository in Vercel. CLI-only deployment does not by itself guarantee a GitHub integration is connected.
+No `--create-if-missing`. If login is required, use `npx vercel login` in your terminal. Never paste a token/password into the repository. The CLI-only workflow does not establish an automatic GitHub integration. Do not claim pushes automatically deploy unless an actual connection is confirmed.
 
-## Hosted behavior and limits
+## Hosted behavior
 
-- Same verified 22 city coordinates, 231 geodesic candidate geometries, MST and heuristic resilient selections exported by the Python engine.
-- Shortest paths, components, bridge counts, utilization, unreachable pairs and modeled propagation RTT are recomputed in the browser after failures.
-- Only the latest scenario is saved to this browser's localStorage. It is private to that browser/origin and is not a shared cloud database. A closed page does not advance simulated time; while the page is open, timer throttling can slow the simulation clock.
-- Play/pause/step/speed, individual and node failures, repair, assumed SRLG groups, traffic surge and JSON/GeoJSON/CSV export work in the hosted version.
-- Radius scenario preview uses spherical-distance proximity to sampled alignment points. It is approximate and may differ slightly from the Python WGS84 geodesic-distance preview. Neither is a terrain/flood exposure analysis.
-- Topology optimization is precomputed from the checked-in candidate dataset. Uniform cost/km and capacity settings do not change its selected edges; they change reported cost/load/capacity. This is not a cloud MILP service.
-- The real Docker/FRRouting lab **cannot run in this static deployment**. The lab tab explicitly reports that it requires the local version. No local router/control socket is exposed to the hosted page.
-- No public FastAPI endpoints, Python background ticker, SSE stream or persistent SQLite file are required by this mode.
+All graph planning, node/cable editing, comparison and exhaustive verification run in the browser. Designs are recomputed from the **edited** graph, not exported as fixed topology IDs. The candidate seed is generated with `.venv/bin/python scripts/export_web_demo.py`. No Python runtime, secret or database is needed in Vercel. localStorage is per browser/origin; it is not shared cloud persistence. Invalid or unavailable storage has visible recovery. Current cable failure is reset on refresh.
 
-## Rebuild data and test
+Real FRR/OSPF is not available in the static deployment and its controls are hidden. No request from production reaches a localhost Docker controller. Source coordinates and approximate geometry limitations remain unchanged; methodology is collapsed in the UI.
+
+## Static validation
 
 ```bash
-.venv/bin/python scripts/export_web_demo.py
-node --experimental-strip-types tests/web_demo.mjs
+make test
 VITE_STATIC_DEMO=1 npm run build --prefix frontend
 .venv/bin/python -m http.server 4173 --bind 127.0.0.1 --directory frontend/dist
 ```
 
-Open http://127.0.0.1:4173 to test with no API running. The web graph test checks all 28 single-link failures of the resilient design, baseline metrics for all three designs, repair, browser persistence, node outage, unreachable RTT, invalid assets and unavailable real lab.
+Open http://127.0.0.1:4173 with no API running. The local full-stack version is built with `npm run build --prefix frontend`, then `make demo`.
 
-For the ordinary local full-stack mode rebuild with `npm run build --prefix frontend`, then run `make demo`.
-
-Official references:
-- https://vercel.com/docs/frameworks/frontend/vite
-- https://vercel.com/docs/functions/runtimes — functions have ephemeral writable scratch storage; don't use local SQLite as a shared persistent cloud database.
+Official references: https://vercel.com/docs/frameworks/frontend/vite and https://vercel.com/docs/cli/deploy.

@@ -1,46 +1,41 @@
-# Баталгаажуулалтын үр дүн — 2026-10-14, Asia/Ulaanbaatar
+# Шинэ академик хувилбарын үр дүн — 2026-10-21
 
-Энэ нь ажилладаг локал demonstration slice; бүх brief-ийн бүрэн гүйцэтгэл биш. `make demo` → http://127.0.0.1:8000.
+Энэ файл нь одоогийн length / eliminated-bridges heuristic-ийн **шинэ** туршилт. Өмнөх NetworkX augmentation-ийн 28 кабель, 6505.98 км гэсэн тоо нь энэ хувилбарын үр дүн биш. Хуучин тайлан `RESULTS_LEGACY_ARCHIVE.md`, хуучин raw хэмжилт `measurements.json`-д тусад нь үлдсэн.
 
-## Бодитоор ажиллуулсан
+## Анхны 22 хотын бодит тооцоо
 
-- Python 3.14.7, Node 26.8.2, npm 11.19.1, Docker CLI 29.7.2, Compose 5.5.1, Linux 7.2.5 Omarchy, Intel i5-1240P 16 logical CPU, 15 GiB RAM. Эхэнд available RAM 8.9 GiB.
-- GeoNames Mongolia extract 306,744 bytes (яг хэмжээ ба SHA manifest-д). 22 PPLA/PPLC capital records, ID + administrative code verification. Cached processed JSON хамт ирнэ.
-- TypeScript болон Vite production build passed. MapLibre 6 explicit worker URL bundling. Эхний browser шалгалтын worker 404 болон marker CSS алдаа засагдсан.
-- 9 automated tests passed, 1 real-lab test skipped. Graph геодезийн урт, 22 distinct node, MST, every selected link removal, physical placeholder removal, infeasible triangle/path, unreachable RTT=null, repeat cut/repair/reset, overload/node failure, exports, malformed input, local-origin guard, lab allowlist.
-- Desktop browser: MST switching, 21 bridges; resilient switching, 0 bridges; UB–Darkhan cut + three one-second steps → alternate UB–Zuunmod–Choir–Mandalgovi–Dalanzadgad–Bayankhongor–Altai–Uliastai–Khovd route. Actual modeled RTT changed from 15.65 to 19.72 ms. 22 sites remain reachable. Full mesh/existing/lab/error UI also available.
-- JSON/GeoJSON/CSV exports. Persisted immutable per-run baseline + scenario. SSE current version snapshots and reconnect handling.
-
-## Хэмжсэн graph үр дүн
-
-`scripts/measure.py`, `docs/measurements.json`-ийг дахин ажиллуулж болно. Хэмжилт нь geodesic lower-bound geometry дээр, road trench length биш.
-
-| Загвар | Холбоос | Урт км | Гүүр | Normal max RTT ms | 1-link failure worst reachable RTT ms | Салгах 1-link scenario |
+| Загвар | Кабель | Урт км | Гүүр | Normal max RTT ms | Холбоотой single-cut / нийт | Worst connected-cut RTT ms |
 |---|---:|---:|---:|---:|---:|---:|
-| MST | 21 | 3952.29 | 21 | 27.24 | 27.24 | 21/21 |
-| Heuristic resilient | 28 | 6505.98 | 0 | 24.34 | 29.24 | 0/28 |
-| Theoretical mesh | 231 | 152750.58 | 0 | 18.10 | 18.10 | 0/231 |
+| MST | 21 | 3952.2864 | 21 | 27.2355 | 0/21 | — |
+| 2-Edge heuristic | 29 | 6338.1666 | 0 | 20.7801 | 29/29 | 24.6367 |
+| Full Mesh | 231 | 152750.5824 | 0 | 18.0983 | 231/231 | 18.0990 |
 
-Resilient length overhead is about **64.6%** above MST; no 15–20% promise. For the assumed 2 Gbps hub demand + 10 Gbps selected flow, 100 Gbps links: normal maximum utilization 36% in MST/resilient; no overload or reachable-pair RTT >50 ms in enumerated single-link cases. MST disconnected pairs are counted separately; its latency number does not imply every pair is reachable.
+2-Edge нэмэлт урт: **60.3671%**. Бүх 29 single-cut үед холбоотой ба max RTT ≤50 ms. Worst case: **Алтай–Баянхонгор** тасрахад 24.6367 ms. MST-ийн 21 cut бүгд графыг салгадаг; түүний reachable хэсгийн latency-г бүх сүлжээний latency гэж дүгнээгүй. Healthy MST/2-Edge хамгийн хол хос: Чойбалсан–Улаангом. Full Mesh хамгийн хол хос: Чойбалсан–Өлгий.
 
-Cached in-process API including JSON serialization: 25 samples, median 14.21 ms, max 21.67 ms. This is TestClient, not browser/network latency. Peak measurement process RSS ~533 MiB while enumerating all scenarios. Live Uvicorn RSS measured at 37,580 KiB (~36.7 MiB) after browser tests. Clean final browser tab logged zero console errors; map, cut/repair, pause/play, full mesh and existing-network empty state were inspected. Desktop 1440×1000 and the default narrow panel were checked; labels in dense central cities can overlap until zoomed. Initial dependency/data preparation took approximately 4 minutes over the available connection; implementation and verification longer. Raw country extract is ~300 KiB; Python environment and frontend dependencies are local setup assets, not GIS memory claims.
+Эдгээр нь verified road trench length эсвэл бодит ping биш. Coordinates: existing sourced GeoNames dataset. Геодезийн ойролцоо урт ×0.01 нь зөвхөн тархалтын RTT. Физик corridor independence, node failure, processing/queueing/serialization ороогүй. 2-Edge нь heuristic, global optimum биш.
 
-## Бодит FRR laboratory статус
+## Тест ба хэмжилт
 
-**Бодитоор баталгаажаагүй / SKIPPED.** Ordinary and escalated Docker socket access both returned permission denied. `sudo -n` required a password. No credentials were used or stored by the application. Compose configuration validates without daemon access. Four router configurations and a real smoke test are provided, but FULL neighbors, actual routes, ping, cut/recovery cannot be reported as passed. Optional Unix-socket allowlisted controller lets the web process stay unprivileged when a user starts it separately with sudo.
+- `make test`: **21 Python tests passed, 1 real-FRR test skipped**; browser graph/editor/storage tests болон **51 Python/browser parity cases passed**. Known triangle on-path cut 3 км → 4 км alternate path, hand-checkable MST, Tarjan/Dijkstra vs seeded NetworkX reference graphs, impossible/disconnected/empty graphs, malformed graph inputs, 23rd city, city removal, length editing, undo/reset, invalid/blocked storage, all original 29 protected and 231 mesh single failures багтсан.
+- Clean `npm ci` passed; lockfile matches exact direct dependencies. TypeScript болон local/`VITE_STATIC_DEMO=1` builds passed. Leaflet 1.9.4 SVG, no MapLibre dependency or worker. npm audit reported 0 vulnerabilities for installed packages.
+- Node v26.8.2: all three original designs plus exhaustive checks нийт **230.32 ms**. Энэ нь Node-д browser core-ийг ажиллуулсан хэмжилт, browser paint/network latency биш.
+- Python 3.14.7, Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44; 15 uncached runs. Planner median **40.92 ms**, max **58.79 ms**. Validated API TestClient median **70.80 ms**, max **134.76 ms** (JSON serialization орсон; интернет latency биш). Peak process RSS **89.5 MiB**.
+- Raw current results: `planning-results.json`, `planning-performance.json`. Reproduce: `make test-graph`, `make measure-planning`. Timing changes between runs are expected.
 
-## Solver статус ба хүрээгүй шаардлага
+## Browser QA performed
 
-MST is optimal for the modeled nearest-neighbor candidate set and configured cost. Resilient is **weighted augmentation heuristic**, no proven optimality, lower bound or gap; keeps the MST. No exact 2-edge-connectivity MILP/separation solver installed. Async optimization endpoint exists; jobs are in memory and cancellation suppresses returned work, not native solver interruption. Capacity/RTT constraints are post-validated, not optimized.
+- Desktop 1440×1000 and 390×844 narrow layout inspected. Mobile document client/scroll widths both 375 px (390 px viewport includes scrollbar); no page-wide horizontal overflow. Comparison table scrolls inside its own container. No WebGL canvases; SVG overlays present.
+- OSM tiles loaded; city/cable labels, direct city/cable selection, selected route, bridge toggle, topology switching, MST disconnection, 2-Edge reroute, restore and exhaustive Full Mesh 231/231 checked.
+- Editor: add 23rd city with optional estimated candidates; rename/coordinate edit; deleting the selected source chooses a valid replacement; undo; original-data reset; candidate length edit recomputes all three designs; delete candidate changes Full Mesh to 230-candidate graph and saving restores it to 231; persistence after refresh checked.
+- Static build tested through an ordinary HTTP file server without Python API; no real-OSPF controls rendered. Clean browser error log was empty. New screenshots: `academic-desktop.png`, `academic-mobile.png`; older cozy/dark screenshots are archive artifacts.
+- Tile failure fallback is implemented (SVG vectors do not depend on tile load), but a full offline tile outage was **not fault-injected** in the browser. Blocked/quota/malformed storage recovery was tested with controlled storage doubles, not by changing the user's browser preferences.
 
-Missing GIS/engineering requirements: road/rail corridor acquisition/preprocessing, alternative real corridors, snapping/continuity/bridge/tunnel handling, DEM elevation/slope, river-crossing verification, terrain exposure, legal access, true shared physical segments/SRLG, incident polygons/exact geospatial intersections, protected/no-build areas. Radius API uses sampled approximate lines, not a flood model. The single-cable corridor action is one-to-one placeholder. The UI also supports explicit user-assumed multi-cable SRLG groups and a 100 km radius preview/cut at a selected city; neither establishes real shared-trench exposure. Real existing-infrastructure map remains empty; operator self-report is linked with publication date unknown, no surveyed alignment fabricated.
+## Real OSPF — SKIPPED
 
-Simulation limitations: deterministic aggregate flow model, no SimPy or packet simulation, combined detection+reconvergence transition, no queue/drop percentages or auto repair-duration scheduler. Node editing/routing asset CRUD, scenario import, richer charts, full 22-router emulation and observed-path animation are not implemented. FRR cut acknowledgement is separate from measured route/ping evidence; no invented convergence time.
+`make lab-check` returned permission denied on `/var/run/docker.sock`, then SKIPPED (exit 77). No new FULL-neighbor, real routing-table, ping or convergence experiment was claimed. Existing 4-router configurations/controller remain local. Main 22-city graph assessment and Vercel do not depend on this lab.
 
-Offline basemap fallback: network tiles are optional; WebGL initialization failure produces a vector SVG diagram, with 22 geographically positioned cities and clickable cables. It is schematic and lacks basemap boundaries. DEM/3D terrain/hillshade overlays are not shipped.
+## Deployment and scope
 
-Scenario parameters are configurable before creating a new run: selected demand, per-link capacity, relative cost/km, detection delay and reconvergence delay. Radius preview uses the same sampled geometry rule as applying the incident. User-assumed SRLG groups persist and a test verifies multi-link cut and restoration.
+Existing production target: https://networking-simulation-beta.vercel.app/, project `networking-simulation`, scope `bolroos-projects`. Existing config/build commands are preserved. Actual deployment status and commit are recorded in the final task response after the authenticated CLI deployment and live browser check; a local successful build alone is not evidence of an updated live site.
 
-## Client interface refresh
-
-The interface now uses warm cream, lavender, peach, sage and pale yellow with rounded panels. The primary flow is two steps: select a city pair, then try one cable failure. The experiment starts the modeled clock automatically and shows detection/recovery status. Map city cards offer source/destination actions, and cable cards offer cut/repair. Parameters, advanced incidents and detailed metrics are behind disclosures. TypeScript and the production build pass; the redesigned one-click failure and repair were checked in the browser with all 22 sites remaining reachable in resilient mode. No backend or geographic guarantees changed.
+Main workflow no longer contains hero slogans, pastel marketing cards, animation clocks, play/pause/speed, detection/reconvergence delay settings, traffic surge/capacity controls, power/radius/SRLG scenarios or publicly nonfunctional real-router controls. Legacy backend APIs are retained for compatibility, separate from the academic planner.

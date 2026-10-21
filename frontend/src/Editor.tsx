@@ -1,0 +1,28 @@
+import {useState} from 'react';
+import {saveCity,saveCable,deleteCity,validateDataset,pair} from './graph';
+import type {Dataset,City} from './graph';
+type Props={graph:Dataset;onChange:(d:Dataset)=>void;onUndo:()=>void;canUndo:boolean;onReset:()=>void};
+export function Editor({graph,onChange,onUndo,canUndo,onReset}:Props){
+ const [error,setError]=useState(''),[message,setMessage]=useState(''),[editing,setEditing]=useState<string|null>(null),[city,setCity]=useState({id:'',name:'',lat:'',lon:''}),[auto,setAuto]=useState(false),[u,setU]=useState(''),[v,setV]=useState(''),[length,setLength]=useState('');
+ const apply=(fn:()=>Dataset,msg:string)=>{try{onChange(fn());setError('');setMessage(msg);return true}catch(e){setError(String(e));setMessage('');return false}};
+ const chooseCity=(id:string)=>{const n=graph.nodes.find(x=>x.id===id);setEditing(n?.id??null);setCity(n?{id:n.id,name:n.name,lat:String(n.lat),lon:String(n.lon)}:{id:'',name:'',lat:'',lon:''})};
+ const cable=graph.edges.find(e=>pair(e.u,e.v)===pair(u,v));
+ const chooseCable=(id:string)=>{const e=graph.edges.find(x=>x.id===id);if(e){setU(e.u);setV(e.v);setLength(String(e.length_km))}else{setU('');setV('');setLength('')}};
+ return <details className="editor panel"><summary>Өгөгдөл засах <span>{graph.nodes.length} хот · {graph.edges.length} боломжит кабель</span></summary><div className="details-body">
+  <div className="editor-actions"><button disabled={!canUndo} onClick={()=>{onUndo();setError('');setMessage('Сүүлийн өгөгдлийн өөрчлөлтийг буцаав.');chooseCity('');chooseCable('')}}>Өөрчлөлт буцаах</button><button onClick={()=>{onReset();setError('');setMessage('Анхны 22 хотын өгөгдлийг сэргээв.');chooseCity('');chooseCable('')}}>Анхны 22 хотыг сэргээх</button></div>
+  {error&&<p className="error" role="alert">{error}</p>}{message&&<p className="success" role="status">{message}</p>}
+  <div className="editor-grid"><form onSubmit={e=>{e.preventDefault();if(!city.lat.trim()||!city.lon.trim()){setError('Координат оруулна уу.');return}const n:City={id:city.id.trim(),name:city.name.trim(),lat:Number(city.lat),lon:Number(city.lon)};if(apply(()=>saveCity(graph,n,editing,auto),'Хотыг хадгалж, гурван сүлжээг дахин тооцоолов.'))chooseCity('')}}>
+   <h3>Хот</h3><label>Засах хот<select aria-label="Засах хот" value={graph.nodes.some(n=>n.id===editing)?editing??'':''} onChange={e=>chooseCity(e.target.value)}><option value="">Шинэ хот нэмэх</option>{graph.nodes.map(n=><option key={n.id} value={n.id}>{n.name}</option>)}</select></label>
+   <div className="form-row"><label>Хотын ID<input aria-label="Хотын ID" required maxLength={64} readOnly={!!editing} value={city.id} onChange={e=>setCity({...city,id:e.target.value})}/></label><label>Хотын нэр<input aria-label="Хотын нэр" required maxLength={80} value={city.name} onChange={e=>setCity({...city,name:e.target.value})}/></label></div>
+   <div className="form-row"><label>Өргөрөг<input aria-label="Өргөрөг" type="number" step="any" min="-90" max="90" required value={city.lat} onChange={e=>setCity({...city,lat:e.target.value})}/></label><label>Уртраг<input aria-label="Уртраг" type="number" step="any" min="-180" max="180" required value={city.lon} onChange={e=>setCity({...city,lon:e.target.value})}/></label></div>
+   {!editing&&<label className="check"><input type="checkbox" checked={auto} onChange={e=>setAuto(e.target.checked)}/>Бусад хоттой тооцоолсон кабель үүсгэх</label>}
+   <p className="note">Шинэ кабель: их тойргийн зай, R=6371.0088 км. Координат засахад геометр шинэчлэгдэнэ; оруулсан урт хадгалагдана.</p>
+   <div className="button-row"><button className="primary" type="submit">Хот хадгалах</button><button type="button" className="danger" disabled={!editing||!graph.nodes.some(n=>n.id===editing)} onClick={()=>{if(editing&&apply(()=>deleteCity(graph,editing),'Хот болон түүнтэй холбоотой кабелиудыг устгав.'))chooseCity('')}}>Хот устгах</button></div>
+  </form><form onSubmit={e=>{e.preventDefault();if(!length.trim()){setError('Кабелийн урт оруулна уу.');return}apply(()=>saveCable(graph,u,v,Number(length)),'Кабелийг хадгалж, гурван сүлжээг дахин тооцоолов.')}}>
+   <h3>Боломжит кабель</h3><label>Засах кабель<select aria-label="Засах кабель" value={cable?.id??''} onChange={e=>chooseCable(e.target.value)}><option value="">Шинэ хос / кабель сонгох</option>{graph.edges.map(e=><option key={e.id} value={e.id}>{graph.nodes.find(n=>n.id===e.u)?.name} — {graph.nodes.find(n=>n.id===e.v)?.name}</option>)}</select></label>
+   <div className="form-row"><label>Кабелийн эхлэх хот<select aria-label="Кабелийн эхлэх хот" required value={u} onChange={e=>setU(e.target.value)}><option value="">Сонгох</option>{graph.nodes.map(n=><option key={n.id} value={n.id}>{n.name}</option>)}</select></label><label>Кабелийн хүрэх хот<select aria-label="Кабелийн хүрэх хот" required value={v} onChange={e=>setV(e.target.value)}><option value="">Сонгох</option>{graph.nodes.map(n=><option key={n.id} value={n.id}>{n.name}</option>)}</select></label></div>
+   <label>Кабелийн урт (км)<input aria-label="Кабелийн урт (км)" required type="number" min="0.000001" step="any" value={length} onChange={e=>setLength(e.target.value)}/></label><p className="note">Нэг хосыг хадгалах нь одоо байгаа кабелийг шинэчилнэ. Устгасан хосыг дахин нэмэх боломжтой. Оруулсан урт нь хэрэглэгчийн таамаглал.</p>
+   <div className="button-row"><button className="primary" type="submit">Кабель хадгалах</button><button type="button" className="danger" disabled={!cable} onClick={()=>{if(cable)apply(()=>validateDataset({nodes:graph.nodes,edges:graph.edges.filter(e=>e.id!==cable.id)}),'Кабелийг боломжит графаас устгав.');setLength('')}}>Кабель устгах</button></div>
+  </form></div>
+ </div></details>;
+}

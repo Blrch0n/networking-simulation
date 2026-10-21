@@ -20,6 +20,7 @@ lab-down:
 	docker compose --profile lab down
 test:
 	$(PY) -m pytest -q
+	node --experimental-strip-types tests/web_demo.mjs
 	npm run build --prefix frontend
 reset-demo:
 	$(PY) scripts/reset.py
@@ -27,3 +28,8 @@ stop:
 	@bash scripts/stop.sh
 lab-controller:
 	sudo .venv/bin/python lab/controller.py
+
+test-graph:
+	node --experimental-strip-types tests/web_demo.mjs
+measure-planning:
+	$(PY) scripts/measure_planning.py

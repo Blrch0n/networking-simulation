@@ -24,22 +24,15 @@ def graph(nodes,edges):
     return g
 
 def design(nodes,edges,kind):
-    full=graph(nodes,edges)
-    if kind=='mesh':return edges,'theoretical'
-    # Four nearest neighbors per site form the explicitly approximate candidate set.
-    allowed=set()
-    for n in full:
-        allowed.update(tuple(sorted((n,v))) for v in sorted(full[n],key=lambda v:full[n][v]['weight'])[:4])
-    c=nx.Graph();c.add_nodes_from(full)
-    for u,v in sorted(allowed):c.add_edge(u,v,**full[u][v])
-    if not nx.is_connected(c):raise ValueError('Candidate graph disconnected')
-    t=nx.minimum_spanning_tree(c)
-    if kind=='resilient':
-        avail=[(u,v,d['weight']) for u,v,d in c.edges(data=True) if not t.has_edge(u,v)]
-        for u,v in nx.k_edge_augmentation(t,2,avail=avail):t.add_edge(u,v,**full[u][v])
-        if list(nx.bridges(t)):raise ValueError('2-edge connectivity infeasible')
-    ids={d['id'] for _,_,d in t.edges(data=True)}
-    return [e for e in edges if e['id'] in ids], 'heuristic' if kind=='resilient' else 'optimal_mst_for_candidates'
+    # Compatibility for legacy scenario endpoints; same length heuristic as the
+    # editable planner, without silently adding unavailable candidate links.
+    from . import planning
+    selected=planning.designs({'nodes':nodes,'edges':edges})
+    if kind not in ('mst','resilient','mesh'):raise ValueError('Unknown topology')
+    g=graph(nodes,selected[kind])
+    if kind!='mesh' and (not nodes or not nx.is_connected(g)):raise ValueError('Candidate graph disconnected')
+    if kind=='resilient' and list(nx.bridges(g)):raise nx.NetworkXUnfeasible('2-edge connectivity infeasible')
+    return selected[kind], 'heuristic' if kind=='resilient' else 'optimal_mst_for_candidates' if kind=='mst' else 'all_available_candidates'
 
 def metrics(nodes,edges,run):
     failed=set(run.get('failed',[])); down=set(run.get('down_nodes',[]))
@@ -59,4 +52,4 @@ def metrics(nodes,edges,run):
     if route:
         for eid in route_edges:loads[eid]+=run.get('demand_gbps',10)
     util={e['id']:loads[e['id']]/e['capacity_gbps'] for e in active}
-    return dict(edge_count=len(edges),installed_length_km=sum(e['length_km'] for e in edges),relative_cost=sum(e['estimated_cost'] for e in edges),bridges=len(list(nx.bridges(g))),components=nx.number_connected_components(g),reachable_cities=len(nx.node_connected_component(g,src)),unreachable_pairs=231-len(rtts),max_rtt_ms=max(rtts,default=None),rtt_violations=sum(x>50 for x in rtts),route=route,route_edges=route_edges,route_length_km=distance,rtt_ms=distance*.01 if distance is not None else None,max_utilization=max(util.values(),default=0),overloaded_links=[k for k,v in util.items() if v>1],utilization=util,active_edges=[e['id'] for e in active])
+    return dict(edge_count=len(edges),installed_length_km=sum(e['length_km'] for e in edges),relative_cost=sum(e['estimated_cost'] for e in edges),bridges=len(list(nx.bridges(g))),components=nx.number_connected_components(g),reachable_cities=len(nx.node_connected_component(g,src)),unreachable_pairs=len(nodes)*(len(nodes)-1)//2-len(rtts),max_rtt_ms=max(rtts,default=None) if nx.is_connected(g) else None,reachable_max_rtt_ms=max(rtts,default=None),rtt_violations=sum(x>50 for x in rtts),route=route,route_edges=route_edges,route_length_km=distance,rtt_ms=distance*.01 if distance is not None else None,max_utilization=max(util.values(),default=0),overloaded_links=[k for k,v in util.items() if v>1],utilization=util,active_edges=[e['id'] for e in active])

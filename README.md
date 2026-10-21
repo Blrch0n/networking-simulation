@@ -1,31 +1,74 @@
-# Шилэн кабелийн сүлжээний загварчлал ба симуляцийн систем
+# Шилэн сүлжээ — 22 цэгийн загварчлал
 
-Монголын нийслэл ба 21 аймгийн төвийг холбох шинэ сүлжээний **ойролцоо геодезийн** төлөвлөлт. React + TypeScript + MapLibre, FastAPI + NetworkX + pyproj, SQLite. Үндэсний инженерийн загвар ба бодит FRRouting лаборатори тусдаа.
+Монголын нийслэл ба 21 аймгийн төвийг холбох сүлжээг графаар загварчлах сургалтын хэрэгсэл. [Нийтлэгдсэн сайт](https://networking-simulation-beta.vercel.app/).
+
+**React/TypeScript + Leaflet SVG**, локал **FastAPI/NetworkX**, Vercel дээр Python сервер шаардахгүй ижил тодорхойлолттой browser алгоритм. Хот ба кабель засахад гурван загвар шууд дахин тооцоологдоно.
 
 ## Ажиллуулах
 
-Python 3.14, Node 26, npm 11 дээр шалгасан. Python 3.12+ болон Node 22.12+ шаардлагатай. Интернет нь анхны dependency таталт болон суурь зурагт хэрэгтэй; боловсруулсан 22 хотын өгөгдөл хамт ирнэ.
+Шалгасан орчин: Python 3.14.7, Node 26.8.2. Vercel Node 24.x. Локал Python 3.12+; graph тестэд Node 22.18+ эсвэл Node 24+ зөвлөнө. Анхны install болон OSM суурь зурагт интернет хэрэгтэй. Хот/кабелийн өгөгдөл repository-д бэлэн.
 
 ```bash
-cd /home/aswer/Downloads/network_simulation
-make doctor
 make setup
 make demo
 ```
 
-Нээх: [http://127.0.0.1:8000](http://127.0.0.1:8000). API schema: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
+Нээх: [http://127.0.0.1:8000](http://127.0.0.1:8000). Локал API: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
 
 ```bash
-make test          # graph/API тест + TypeScript/build
-make stop          # зөвхөн энэ төслийн Uvicorn процессыг зогсооно
-make reset-demo    # зөвхөн хадгалсан demo сценариудыг цэвэрлэнэ
+make test             # Python tests + browser/Python parity + production build
+make test-graph       # Browser graph / editor / storage / parity tests
+make measure-planning # Одоогийн planner ба API хэмжилт
+make stop             # Зөвхөн төслийн Uvicorn серверийг зогсоох
 ```
 
-UI: MST → 21 гүүр холбоос; хамгаалалттай → 0 гүүр; 231 холбоостой онолын mesh. Хотын хос сонгон маршрут тооцоолно. Кабель сонгоод тасалж, 3 секунд алхуулах эсвэл тоглуулахад маршрут өөрчлөгдөнө. Засварлах, бүх хөрөнгө сэргээх, хотын тэжээл таслах, урсгал ×5, JSON/GeoJSON/CSV экспорттой. Сценари SQLite-д хадгалагдана; refresh хийхэд үргэлжилнэ.
+## Багшид үзүүлэх үндсэн урсгал
 
-## Бодит OSPF лаборатори
+1. **MST** сонго: 22 хот, 21 кабель, 21 гүүр. «Сонгосон замд тасралт турших» → сүлжээ сална, бүх сүлжээний RTT “—”.
+2. **2-Edge** сонго: 29 кабель, 0 гүүр. Кабель таслахад нөөц зам гарна. «Сэргээх» эрүүл сүлжээг буцаана.
+3. **Бүх кабелийг шалгах**: суурь сүлжээний кабель бүрийг бие даан тасална. 2-Edge 29/29, Full Mesh 231/231 холбогдсон хэвээр.
+4. Харьцуулалтын хүснэгтээс урт, нэмэлт хувь, max RTT, хамгаалалтыг хар.
+5. **Өгөгдөл засах**: хот нэмэх/нэр/координат/устгах; кабель нэмэх/урт/устгах; өөрчлөлт буцаах; анхны өгөгдөл сэргээх.
 
-Эхлээд Docker Engine ажилласан, тухайн хэрэглэгч Docker ашиглах зөвшөөрөлтэй байх ёстой. Host interface, firewall, route өөрчлөх скрипт байхгүй. Дөрвөн контейнер, дөрвөн **хоёр router-той тусгаарлагдсан bridge** нь дөрвөн point-to-point сегментийг төлөөлнө. `internal` сүлжээ, тогтмол interface нэр, OSPF point-to-point тохиргоо ашиглана. Контейнерууд порт нийтлэхгүй, management transit сүлжээ байхгүй; API нь `docker exec` control plane ашиглана.
+5–7 минутын дэлгэрэнгүй дараалал: [docs/DEMO_GUIDE_MN.md](docs/DEMO_GUIDE_MN.md).
+
+## Алгоритм ба шинэ үр дүн
+
+- Kruskal нь **байгаа бүх боломжит кабелиас** уртаар MST олно. Салангид оролтод модны ой; холбогдсон төсөл гэж зарлахгүй.
+- Tarjan DFS: `low[v] > discovery[u]` бол u–v гүүр. Бүх бүрэлдэхүүнд ажиллана; NetworkX bridges-тай тестээр тулгасан.
+- 2-Edge: MST-д `кабелийн урт / арилгах гүүрийн тоо` хамгийн бага ирмэгийг давтан нэмэх deterministic heuristic. Тэнцвэл урт, эрэмбэлсэн хотын ID хос, кабелийн ID. Глобал optimum биш.
+- Full Mesh нь бүх **үлдсэн боломжит** кабель. Хэрэглэгч хассан ирмэгийг алгоритм дахин зохиож нэмэхгүй.
+- Богино зам: Dijkstra. Max network RTT нь **бүх хотын хосын** хамгийн их богино замын RTT. Сонгосон замын RTT тусдаа.
+
+| Загвар | Кабель | Урт, км | MST-ээс нэмэлт | Гүүр | Normal max RTT, ms | Нэг тасралтын холбоотой тохиолдол | Worst connected failure RTT, ms |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| MST | 21 | 3952.29 | 0% | 21 | 27.24 | 0/21 | — |
+| 2-Edge heuristic | 29 | 6338.17 | 60.37% | 0 | 20.78 | 29/29 | 24.64 |
+| Full Mesh | 231 | 152750.58 | 3764.87% | 0 | 18.10 | 231/231 | 18.10 |
+
+Эдгээр нь **шинэ алгоритмын** анхны dataset дээрх хэмжилт. Хуучин 28-кабелийн augmentation-ийн тоотой хольж болохгүй. Дахин гаргах: `make test-graph`; яг тоонууд [docs/planning-results.json](docs/planning-results.json). Дэлгэрэнгүй [docs/RESULTS.md](docs/RESULTS.md).
+
+## Засвар, хадгалалт, алдаа
+
+- Шинэ хотыг автоматаар холбох нь **сонголттой**: их тойргийн зай, дундаж дэлхийн радиус 6371.0088 км. Дараа нь эдгээр кабелийг засах/устгах боломжтой.
+- Координат өөрчлөхөд тухайн кабелийн төгсгөлийн геометр шинэчлэгдэж, өмнөх **урт хадгалагдана**. Өөр урт хэрэгтэй бол кабелиа тусад нь засна.
+- Нэг хос хотын кабелийг хадгалах нь шинэчилнэ; хассан хосыг хадгалбал сэргээнэ. Давхар undirected кабель, self-loop, давхардсан ID, invalid координат/урт татгалзана.
+- Сонгосон эхлэх/хүрэх хот устахад хүчинтэй орлох хот автоматаар сонгогдоно. 100 хүртэл хот, 4950 кабель дэмждэг demo хязгаартай.
+- `fiber-planner-workspace-v2` localStorage key нь граф, маршрут сонголт, сүүлийн нэг undo-г хадгална. Хуучин schema-ийн тусдаа key-үүдийг устгахгүй. Буруу хадгалалт анхны өгөгдөлд буцаж тайлбар харуулна; blocked/quota storage үед memory-д ажиллана.
+- Одоогийн тасралт refresh хийхэд цэвэрлэгдэнэ. «Анхны 22 хотыг сэргээх» browser өгөгдлийг сэргээнэ. `make reset-demo` нь зөвхөн хуучин SQLite scenario-г цэвэрлэнэ.
+- Зурагны tile тасарсан ч SVG хот/кабель үлдэнэ. Pan/zoom нь кабель сонголт ба тасралтад хадгалагдана; «Бүх хотыг харах» explicit fit хийнэ.
+
+## Зай, RTT ба хязгаарлалт
+
+Анхны координат GeoNames (CC BY 4.0), provenance SHA-256/огноо: [data/provenance/manifest.json](data/provenance/manifest.json). Анхны кабель WGS84 геодезийн ойролцоо; бодит авто/төмөр замын трасс, голын гарц, өндөршил, газрын зөвшөөрөл баталгаажаагүй. Хэрэглэгчийн урт таамаглал. Суурь зураг © OpenStreetMap contributors, bulk tile download байхгүй.
+
+`RTT_ms = 2 × зай_км / 200000 × 1000 = зай_км × 0.01` — зөвхөн тархалт. Processing/queueing/serialization эсвэл бодит ping биш. Салангид графын whole-network RTT null (“—”); зөвхөн reachable pair max-ийг тусад нь шошголон харуулж болно. Тест бүр connected ба ≤50 ms байж байж «бүгд хангана»; хоосон/анхнаасаа салангид граф амжилт гэж гарахгүй.
+
+Хамгаалалтын загвар нь **нэг логик кабелийн тасралт**. Хотын гэмтэл, олон кабель, хамтын trench/SRLG болон тусдаа физик замыг батлахгүй. Мөнгөний зохиомол үнэлгээ байхгүй; урт нь харьцангуй барилгын өртгийн proxy.
+
+## Optional бодит FRR / OSPF
+
+Үндсэн үнэлгээ browser графаар бүрэн ажиллана. Бодит дөрвөн router lab нь локал header-ийн тусдаа хэсэг; Vercel дээр товч байхгүй.
 
 ```bash
 make lab-up
@@ -34,44 +77,12 @@ make stop
 FIBER_LAB_ENABLED=1 make demo
 ```
 
-Docker зөвшөөрөл шаардвал **өөрийн терминалд** `sudo docker compose --profile lab up -d` ажиллуулна. Нууц үгийг чат эсвэл config файлд бүү хадгал. Web API-г root-аар бүү ажиллуул. API хэрэглэгч Docker зөвшөөрөлгүй бол лабораторийн төлөв, JSON шалгалт ажиллахгүй; зөвшөөрөлтэй локал account шаардлагатай. Host хэрэглэгчийн Docker эрх нь өндөр эрхтэй тул `.env`-ийн lab enable тохиргоо анхдагчаар унтраалттай. API-д arbitrary shell/Docker command илгээх боломж байхгүй; зөвхөн allowlist-д байгаа 4 router, 4 link, FRR read команд, 3-packet ping, interface up/down.
+Docker эрхгүй бол өөрийн терминалд `sudo docker compose --profile lab up -d`, дараа нь тусдаа терминалд `make lab-controller`. Sudo password-ийг зөвхөн терминалд оруул; web API-г root-аар бүү ажиллуул. Controller `.run/lab.sock`-ийг invoking user-д 0600 эрхээр нээнэ, зөвхөн allowlisted status/read/ping/link-state үйлдэлтэй. Host interface/route/firewall өөрчилдөггүй. Нийтэд Docker socket/API expose хийхгүй.
 
-```bash
-make lab-down      # зөвхөн mnfiber Compose төслийн контейнер/сүлжээг устгана
-```
+`make lab-check` боломжгүй үед SKIPPED, exit 77; үнэхээр FULL/ping/route шалгаагүйг passed гэж зарлахгүй. Дуусгахад `make lab-down`, controller Ctrl+C. FRR тохиргоо `lab/`, addressing `lab/addressing.json`.
 
-`make lab-check` бодит lab боломжгүй үед **SKIPPED / exit 77** өгнө. FULL хөрш ба ping-ийг бодитоор шалгаагүй бол passed гэж үзэхгүй. Шинэ контейнер эхлэхэд эхний хөрш тогтохыг хүлээнэ. Олон docker context байвал daemon/context ижил байх ёстой. Compose >=2.36 шаардлагатай.
+## Vercel
 
-## Өгөгдөл дахин бэлтгэх
+Одоо байгаа `networking-simulation` project, root `./`, config [vercel.json](vercel.json)-ийг хадгалсан. Динамик browser алгоритм нь edited графын бүх сүлжээ, failure, comparison, verification-ийг сервергүй тооцоолно. Нэмэлт cloud database/secret хэрэггүй. Нийтлэх ба локал статик тест: [docs/VERCEL.md](docs/VERCEL.md).
 
-```bash
-.venv/bin/python scripts/acquire.py
-.venv/bin/python lab/scripts/generate.py
-```
-
-GeoNames `MN.zip` файлыг зөвхөн cache байхгүй үед татна. GeoNames ID, PPLA/PPLC feature code, admin code-оор нийслэл ба 21 төвийг ялгана. Эх сурвалж, SHA-256, огноо, лиценз, хувиргалт: `data/provenance/manifest.json`. Боловсруулсан өгөгдөл CC BY 4.0; GeoNames attribution заавал хадгална. Суурь зураг © OpenStreetMap contributors; ердийн интерактив хэрэглээ, bulk download байхгүй.
-
-## Хязгаарлалт
-
-Энэ хувилбар бүрэн инженерийн төсөл **биш**. Зам/төмөр замын геометр, DEM, голын гарц, бодит SRLG, газрын зөвшөөрөл татаж баталгаажуулаагүй. Шугамууд WGS84 геодезийн ойролцоо; урт нь авто замын урт биш. Unknown terrain/crossings нь `null`.
-
-Хамгаалалттай хувилбар NetworkX weighted augmentation **heuristic**; MILP optimality баталгаа байхгүй. Зөвхөн загварын нэг логик холбоосын тасралтын хамгаалалтыг шалгасан. Физик замын бие даасан байдал баталгаажаагүй. Capacity/RTT-ийг оптимизацид хязгаарлаагүй; дараа нь тооцон зөрчлийг харуулна. Queue/drop packet simulation байхгүй, deterministic aggregate overload flags ашиглана.
-
-Одоо байгаа сүлжээ: операторын эх сурвалжийн хэсэгчилсэн тайлан; GIS alignment байхгүй тул газрын зурагт кабель зохиож харуулахгүй. Бодит lab-г энэ орчинд Docker эрхгүй үед баталгаажуулах боломжгүй. Дэлгэрэнгүйг `docs/RESULTS.md`-ээс үзнэ үү.
-
-### Docker эрхгүй хэрэглэгчид зориулсан хязгаарлагдсан controller
-
-Web app-д Docker эрх өгөхгүйгээр lab ажиллуулах хувилбар:
-
-```bash
-sudo docker compose --profile lab up -d
-make lab-controller
-```
-
-Хоёр дахь команд тусдаа терминалд нээлттэй ажиллана; sudo нууц үгийг зөвхөн терминалд оруул. Controller `.run/lab.sock` Unix socket-ийг зөвхөн sudo дуудаж буй хэрэглэгчид 0600 эрхээр нээнэ. Browser-д shell/command API өгдөггүй, зөвхөн allowlist-ийн status/read/ping/link state. Demo-г энгийн хэрэглэгчээр `make demo` ажиллуулахад socket-ийг автоматаар илрүүлнэ; `FIBER_LAB_ENABLED=1` шаардлагагүй. Controller-г Ctrl+C-ээр зогсооно. Энэ нь web app-г root-аар ажиллуулах шаардлагыг арилгана. Root helper нь project Docker daemon эрхтэй хэвээр; localhost demo зориулалттай.
-
-## Vercel дээр нийтлэх
-
-GitHub repository-г https://vercel.com/new дээр import хийнэ. Root Directory: **`./`** (repository root). `vercel.json` install/build/output тохиргоог агуулна; нэмэлт secret эсвэл database шаардлагагүй.
-
-Нийтлэгдсэн хувилбар нь **хөтөчид ажиллах төлөвлөлтийн демо**: сценари зөвхөн тухайн browser-д хадгалагдана, бодит OSPF нь локал хувилбарт ажиллана. Газрын зураг, маршрут, тасралт/засвар, урсгал, экспорт ажиллана. Дэлгэрэнгүй: [Vercel deployment](docs/VERCEL.md).
+Өгөгдлийг дахин бэлтгэх: `.venv/bin/python scripts/acquire.py` (cache-тай), дараа нь `.venv/bin/python scripts/export_web_demo.py`. Архитектур: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
