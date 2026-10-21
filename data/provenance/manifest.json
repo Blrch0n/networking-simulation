@@ -1,0 +1,25 @@
+{
+  "retrieved_at": "2026-10-14T07:23:46.895342+00:00",
+  "sources": [
+    {
+      "id": "geonames",
+      "url": "https://download.geonames.org/export/dump/MN.zip",
+      "publisher": "GeoNames",
+      "license": "CC BY 4.0",
+      "license_url": "https://www.geonames.org/export/",
+      "sha256": "8384e64988ca14e72f04512dc4cd618bb034c743a802fa021fa0d63e97225f2f",
+      "bytes": 306744,
+      "dataset_date": "individual record modification dates in nodes.json",
+      "transformations": "Select 1 PPLC + 21 PPLA by stable GeoNames ID and admin code; retain WGS84 coordinates; Mongolian labels from brief.",
+      "units": "decimal degrees, WGS84",
+      "confidence": "gazetteer; city center not a surveyed equipment site"
+    }
+  ],
+  "limitations": [
+    "All candidate alignments are geodesic approximations, NOT road/rail routes.",
+    "No acquired DEM, terrain/slope, river crossings, legal access or verified SRLG. Unknown values remain null.",
+    "Complete mesh is a theoretical 231-pair comparison; feasible corridors are unverified.",
+    "Existing fiber: ICN operator self-report only; zero geographic features verified.",
+    "No engineering cost quotes; 1 relative unit/km, 100 Gbps assumed."
+  ]
+}

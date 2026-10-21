@@ -1,0 +1,49 @@
+{
+  "hardware": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44",
+  "python": "3.14.7",
+  "topologies": {
+    "mst": {
+      "status": "optimal_mst_for_candidates",
+      "edges": 21,
+      "length_km": 3952.2863783729895,
+      "bridges": 21,
+      "normal_max_rtt_ms": 27.235453504596993,
+      "single_link_failure_worst_reachable_rtt_ms": 27.235453504596993,
+      "single_link_disconnecting_scenarios": 21,
+      "failure_scenarios_over_50ms": 0,
+      "normal_max_utilization": 0.36,
+      "failure_scenarios_over_capacity": 0
+    },
+    "resilient": {
+      "status": "heuristic",
+      "edges": 28,
+      "length_km": 6505.982226939473,
+      "bridges": 0,
+      "normal_max_rtt_ms": 24.337023347095414,
+      "single_link_failure_worst_reachable_rtt_ms": 29.242329569852945,
+      "single_link_disconnecting_scenarios": 0,
+      "failure_scenarios_over_50ms": 0,
+      "normal_max_utilization": 0.36,
+      "failure_scenarios_over_capacity": 0
+    },
+    "mesh": {
+      "status": "theoretical",
+      "edges": 231,
+      "length_km": 152750.5823925901,
+      "bridges": 0,
+      "normal_max_rtt_ms": 18.098318024442197,
+      "single_link_failure_worst_reachable_rtt_ms": 18.098997123356238,
+      "single_link_disconnecting_scenarios": 0,
+      "failure_scenarios_over_50ms": 0,
+      "normal_max_utilization": 0.12,
+      "failure_scenarios_over_capacity": 0
+    }
+  },
+  "in_process_cached_api_ms": {
+    "median": 14.209742000275583,
+    "max": 21.673219000149402,
+    "samples": 25,
+    "method": "FastAPI TestClient includes serialization; no browser/network latency"
+  },
+  "peak_process_rss_kib": 546144
+}

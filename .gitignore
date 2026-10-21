@@ -1,0 +1,15 @@
+.venv/
+node_modules/
+frontend/dist/
+__pycache__/
+.pytest_cache/
+data/raw/
+data/*.sqlite*
+.run/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.aws/
+.codex/
+.agents/
