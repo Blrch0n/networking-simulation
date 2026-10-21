@@ -4,12 +4,13 @@ import * as maplibregl from 'maplibre-gl';
 import type {LineString} from 'geojson';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './style.css';
+import {STATIC_DEMO,browserApi,subscribeBrowser,downloadBrowser} from './webDemo';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 maplibregl.setWorkerUrl(workerUrl);
 type Node={id:string;name:string;aimag:string;lat:number;lon:number};
 type Edge={id:string;u:string;v:string;length_km:number;capacity_gbps:number;geometry:LineString};
 type Run={id:string;topology:string;clock:number;version:number;source:string;destination:string;playing:boolean;speed:number;failed:string[];pending:{edges:string[]}[];nodes:Node[];edges:Edge[];events:{time:number;message:string}[];metrics:{[key:string]:any};solver_status:string};
-async function api(path:string,body?:unknown,method?:string){const r=await fetch('/api'+path,{method:method||(body?'POST':'GET'),headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const d=await r.json();if(!r.ok)throw Error(typeof d.detail==='string'?d.detail:JSON.stringify(d.detail));return d}
+async function api(path:string,body?:unknown,method?:string){if(STATIC_DEMO)return browserApi(path,body);const r=await fetch('/api'+path,{method:method||(body?'POST':'GET'),headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const d=await r.json();if(!r.ok)throw Error(typeof d.detail==='string'?d.detail:JSON.stringify(d.detail));return d}
 const fmt=(n:number|null,d=0)=>n==null?'—':n.toLocaleString('mn-MN',{maximumFractionDigits:d});
 function MapView({run,selected,onSelect,existing}:{run:Run;selected:string;onSelect:(id:string)=>void;existing:boolean}){
  const el=useRef<HTMLDivElement>(null),map=useRef<maplibregl.Map|null>(null),live=useRef(run),sel=useRef(onSelect),isExisting=useRef(existing);isExisting.current=existing; const [fallback,setFallback]=useState(false);live.current=run;sel.current=onSelect;
@@ -59,15 +60,16 @@ function App() {
  },[]);
  useEffect(()=>{
   if(!run)return;
+  if(STATIC_DEMO)return subscribeBrowser(run.id,next=>setRun(prev=>prev&&prev.id===next.id&&next.version>=prev.version?next:prev),e=>setError(String(e)));
   const es=new EventSource(`/api/simulation/runs/${run.id}/events`);
   es.onopen=()=>setError('');
-  es.onmessage=e=>{const next=JSON.parse(e.data) as Run;setRun(prev=>prev?.id===next.id&&next.version>=prev.version?next:prev)};
+  es.onmessage=e=>{const next=JSON.parse(e.data) as Run;setRun(prev=>prev&&prev.id===next.id&&next.version>=prev.version?next:prev)};
   es.onerror=()=>setError('Холболт түр тасарлаа. Дахин холбогдож байна…');
   return()=>es.close();
  },[run?.id]);
  const act=async(endpoint:string,body:any)=>{
   if(!run)return;
-  try {const next=await api(`/simulation/runs/${run.id}/${endpoint}`,body) as Run;setRun(prev=>prev?.id===next.id&&next.version>=prev.version?next:prev);setError('');return next}
+  try {const next=await api(`/simulation/runs/${run.id}/${endpoint}`,body) as Run;setRun(prev=>prev&&prev.id===next.id&&next.version>=prev.version?next:prev);setError('');return next}
   catch(e){setError(String(e))}
  };
  const demoCut=async()=>{
@@ -93,7 +95,7 @@ function App() {
     <button className={tab==='lab'?'active':''} onClick={()=>setTab('lab')}>OSPF лаборатори</button>
     <button className={tab==='data'?'active':''} onClick={()=>setTab('data')}>Эх сурвалж</button>
    </nav>
-   <span className="local"><i/> Локал орчин</span>
+   <span className="local"><i/> {STATIC_DEMO?'Вэб демо':'Локал орчин'}</span>
   </header>
   {error&&<div className="error" role="alert">{error}<button onClick={()=>create()}>Дахин оролдох</button></div>}
   {tab==='lab'?<Lab/>:tab==='data'?<article>
@@ -101,7 +103,7 @@ function App() {
    <div className="source-grid"><section><span className="source-icon">◎</span><h2>Хотын байршил</h2><p>22 хотын цэгийг GeoNames-оос авч, WGS84 координатаар харуулав. Кабель нь геодезийн ойролцоо шугам; авто замын бодит трасс биш.</p></section><section><span className="source-icon peach">≈</span><h2>Загварчилсан хэмжилт</h2><p>RTT нь зөвхөн гэрлийн тархалтын тооцоо. Өртөг нь харьцангуй нэгж. Өндөршил, голын гарц болон зөвшөөрөл баталгаажаагүй.</p></section><section><span className="source-icon mint">↗</span><h2>Хамгаалалтын хүрээ</h2><p>Heuristic алгоритм нэг логик холбоосын тасралтад тэсвэртэй сүлжээ олно. Глобал оновчтой болон физик трассын бие даасан байдлын баталгаа байхгүй.</p></section></div>
    <h2>Одоо байгаа дэд бүтэц</h2><p><a href="https://www.icn.mn/about/greeting/" target="_blank" rel="noreferrer">Мэдээлэл холбооны сүлжээ ХХК ↗</a> нийт 19,676 км үндсэн сүлжээ гэж мэдээлсэн. Нийтэлсэн огноо тодорхойгүй. Баталгаатай GIS трасс байхгүй тул газрын зурагт шугам зохиож оруулаагүй.</p>
    <details><summary>Өгөгдлийн дэлгэрэнгүй бүртгэл</summary><pre>{JSON.stringify(quality,null,2)}</pre></details>
-  </article>:run?<div className="workspace">
+  </article>:run?<div className="workspace">{STATIC_DEMO&&<div className="hosted-note">Вэб симуляци · Сценари зөвхөн энэ хөтөчид хадгалагдана. Бодит OSPF лаборатори локал хувилбарт ажиллана.</div>}
    <section className="title-row"><div><div className="eyebrow">22 ХОТ · НЭГ СҮЛЖЭЭ</div><h1>Холбоотой байхын <em>учир.</em><span className="title-spark">✧</span></h1><p>Хоёр хот сонгоод, сүлжээ тасралтыг хэрхэн даван туулахыг үзээрэй.</p></div><div className="intro-note"><span>✦</span> Сонго. Турш. Нээ.<small>Таны жижиг сүлжээний лаборатори</small></div></section>
    {existing?<section className="reference"><b>Одоо байгаа сүлжээний эх сурвалж</b><p>Операторын мэдээлэл бий. Баталгаатай газрын зургийн трасс байхгүй тул кабель харуулаагүй.</p><a href="https://www.icn.mn/about/greeting/" target="_blank" rel="noreferrer">Операторын тайлан үзэх ↗</a></section>:<section className="metrics" aria-label="Сүлжээний гол үзүүлэлт">
     <div className="metric lavender"><span className="metric-icon">◎</span><div><strong>{m.reachable_cities}<small>/ 22</small></strong><span>Холбогдсон хот</span></div></div>
@@ -133,7 +135,7 @@ function App() {
      {!existing&&<><div className={`flow-status ${pending?'waiting':damaged?'rerouted':'normal'}`} role="status"><span className="status-orb">{pending?'◌':damaged?'↪':'✓'}</span><div><strong>{pending?'Тасралтыг илрүүлж байна…':damaged?(reachable?'Нөөц замаар холбогдлоо':'Энэ чиглэлд хүрэх боломжгүй'):'Сүлжээ хэвийн байна'}</strong><span>{pending?`${(run as any).detection_delay} s илрүүлэлт + ${(run as any).reconvergence_delay} s маршрут шинэчлэлт`:damaged?`${run.failed.length} кабель тасарсан · ${m.reachable_cities} хот хүрэх боломжтой`:'Тоглуулж урсгалыг ажиглаарай. Эсвэл тасралт туршаад үзээрэй.'}</span></div><span className="status-chip">{pending?'Шалгаж байна':damaged?'Туршилт':'Хэвийн'}</span></div><div className="playbar"><button className="play-button" onClick={()=>act('control',{action:run.playing?'pause':'play'})}>{run.playing?'Ⅱ Түр зогсоох':'▶ Тоглуулах'}</button><button className="icon-button" title="Нэг секунд алхуулах" onClick={()=>act('control',{action:'step'})}>+1 s</button><button className="icon-button" title="Сценари шинээр эхлэх" onClick={()=>act('control',{action:'reset'})}>↺</button><div className="playbar-divider"/><label className="speed-label">Хурд<select aria-label="Симуляцийн хурд" value={run.speed} onChange={e=>act('control',{action:'speed',speed:Number(e.target.value)})}>{[.25,1,2,5,10,20].map(s=><option key={s} value={s}>{s}×</option>)}</select></label><span className="time">Симуляцийн цаг <b>{fmt(run.clock)} s</b></span></div></>}
     </section>
    </main>
-   {!existing&&<section className="bottom"><div><div className="section-heading"><h3><span>◷</span> Юу өөрчлөгдөв?</h3><span>ҮЙЛ ЯВДАЛ</span></div><div className="timeline">{run.events.length===0&&<p className="timeline-empty">Туршилтын өөрчлөлтүүд энд харагдана.</p>}{run.events.slice(-3).reverse().map((e,i)=><div key={i}><time>{fmt(e.time)} s</time><span>{e.message}</span></div>)}</div></div><div className="export"><h3>Үр дүнгээ авч үлдээгээрэй <span>↗</span></h3><p>Өөрийн сүлжээ, сценариа татах</p>{['json','geojson','csv'].map(f=><a key={f} download={`network.${f}`} href={`/api/simulation/runs/${run.id}/export?format=${f}`}>{f.toUpperCase()} ↓</a>)}</div></section>}
+   {!existing&&<section className="bottom"><div><div className="section-heading"><h3><span>◷</span> Юу өөрчлөгдөв?</h3><span>ҮЙЛ ЯВДАЛ</span></div><div className="timeline">{run.events.length===0&&<p className="timeline-empty">Туршилтын өөрчлөлтүүд энд харагдана.</p>}{run.events.slice(-3).reverse().map((e,i)=><div key={i}><time>{fmt(e.time)} s</time><span>{e.message}</span></div>)}</div></div><div className="export"><h3>Үр дүнгээ авч үлдээгээрэй <span>↗</span></h3><p>Өөрийн сүлжээ, сценариа татах</p>{['json','geojson','csv'].map(f=><a key={f} download={`network.${f}`} onClick={STATIC_DEMO?e=>{e.preventDefault();downloadBrowser(run.id,f).catch(error=>setError(String(error)))}:undefined} href={STATIC_DEMO?'#':`/api/simulation/runs/${run.id}/export?format=${f}`}>{f.toUpperCase()} ↓</a>)}</div></section>}
    {!existing&&<details className="technical"><summary>Тооцооны дэлгэрэнгүй</summary><div className="technical-grid">{[['Бүрэлдэхүүн',m.components],['Хамгийн их RTT',`${fmt(m.max_rtt_ms,2)} ms`],['50 ms давсан хос',m.rtt_violations],['Тасарсан хос',m.unreachable_pairs],['Хамгийн их ашиглалт',`${fmt(m.max_utilization*100)}%`],['Багтаамж давсан',m.overloaded_links.length],['Харьцангуй өртөг',fmt(m.relative_cost)],['Алгоритм',run.solver_status]].map(([label,value])=><div key={label}><span>{label}</span><b>{value}</b></div>)}</div><p>RTT нь тархалтын тооцоо. Хамгаалалттай загвар нь heuristic; бодит физик трассын бие даасан байдал баталгаажаагүй.</p></details>}
    <footer><span><i/> Тайван туршаарай. Өөрчлөлтүүд зөвхөн энэ симуляцид үйлчилнэ.</span><button onClick={()=>setTab('data')}>Өгөгдөл ба хязгаарлалт ↗</button></footer>
   </div>:<div className="loading"><span>✳︎</span><h2>Холбоосуудыг бэлтгэж байна…</h2><p>Таны сүлжээ удахгүй бэлэн болно.</p></div>}

@@ -13,3 +13,4 @@ data/*.sqlite*
 .aws/
 .codex/
 .agents/
+.vercel/

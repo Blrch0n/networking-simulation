@@ -69,3 +69,9 @@ make lab-controller
 ```
 
 Хоёр дахь команд тусдаа терминалд нээлттэй ажиллана; sudo нууц үгийг зөвхөн терминалд оруул. Controller `.run/lab.sock` Unix socket-ийг зөвхөн sudo дуудаж буй хэрэглэгчид 0600 эрхээр нээнэ. Browser-д shell/command API өгдөггүй, зөвхөн allowlist-ийн status/read/ping/link state. Demo-г энгийн хэрэглэгчээр `make demo` ажиллуулахад socket-ийг автоматаар илрүүлнэ; `FIBER_LAB_ENABLED=1` шаардлагагүй. Controller-г Ctrl+C-ээр зогсооно. Энэ нь web app-г root-аар ажиллуулах шаардлагыг арилгана. Root helper нь project Docker daemon эрхтэй хэвээр; localhost demo зориулалттай.
+
+## Vercel дээр нийтлэх
+
+GitHub repository-г https://vercel.com/new дээр import хийнэ. Root Directory: **`./`** (repository root). `vercel.json` install/build/output тохиргоог агуулна; нэмэлт secret эсвэл database шаардлагагүй.
+
+Нийтлэгдсэн хувилбар нь **хөтөчид ажиллах төлөвлөлтийн демо**: сценари зөвхөн тухайн browser-д хадгалагдана, бодит OSPF нь локал хувилбарт ажиллана. Газрын зураг, маршрут, тасралт/засвар, урсгал, экспорт ажиллана. Дэлгэрэнгүй: [Vercel deployment](docs/VERCEL.md).
