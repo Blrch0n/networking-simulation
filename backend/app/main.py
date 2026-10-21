@@ -229,7 +229,7 @@ class PlanningInput(BaseModel):
     topology:Literal['mst','resilient','mesh']='resilient'
     source:str=''
     destination:str=''
-    failed_id:str|None=None
+    failed_id:str|list[str]|None=None
     verify:bool=False
 @app.post('/api/planning/analyze')
 def analyze_planning(body:PlanningInput):

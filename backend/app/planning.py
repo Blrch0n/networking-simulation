@@ -124,6 +124,7 @@ def analyze(data,topology,source,destination,failed_id=None,verify=False):
     ids={n['id'] for n in data['nodes']}
     if ids and (source not in ids or destination not in ids):raise ValueError('Invalid route city')
     ds=designs(data);rows=[dict(kind=kind,metrics=metrics(data['nodes'],ds[kind],source,destination)) for kind in KINDS];installed=ds[topology]
-    if failed_id is not None and not any(e['id']==failed_id for e in installed):raise ValueError('Cable not installed in selected topology')
-    valid_failed=failed_id
-    return dict(designs=ds,comparison=rows,baseline=next(r['metrics'] for r in rows if r['kind']==topology),current=metrics(data['nodes'],[e for e in installed if e['id']!=valid_failed],source,destination),failed_id=valid_failed,verification=verify_failures(data['nodes'],installed) if verify else None)
+    failed_ids=sorted(set(failed_id if isinstance(failed_id,list) else [failed_id] if failed_id is not None else []))
+    if any(not any(e['id']==fid for e in installed) for fid in failed_ids):raise ValueError('Cable not installed in selected topology')
+    valid_failed=failed_ids[0] if failed_ids else None
+    return dict(designs=ds,comparison=rows,baseline=next(r['metrics'] for r in rows if r['kind']==topology),current=metrics(data['nodes'],[e for e in installed if e['id'] not in failed_ids],source,destination),failed_id=valid_failed,failed_ids=failed_ids,verification=verify_failures(data['nodes'],installed) if verify else None)

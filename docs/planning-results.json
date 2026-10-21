@@ -1,8 +1,8 @@
 {
-  "measured_at": "2026-10-21T04:24:45.716Z",
+  "measured_at": "2026-10-21T06:16:27.265Z",
   "node_version": "v26.8.2",
-  "browser_graph_total_ms": 230.32372099999998,
-  "parity_cases": 51,
+  "browser_graph_total_ms": 217.73550899999998,
+  "parity_cases": 55,
   "topologies": {
     "mst": {
       "cables": 21,

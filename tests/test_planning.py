@@ -66,3 +66,20 @@ def test_edited_api_and_boundaries(tmp_path,monkeypatch):
         assert r.json()['current']['connected'];assert time.perf_counter()-start<1
         bad=c.post('/api/planning/analyze',json={'graph':d,'source':'missing','destination':'0'});assert bad.status_code==422
         assert c.post('/api/planning/analyze',json={'graph':d,'source':'0','destination':'22'},headers={'origin':'https://evil.example'}).status_code==403
+
+
+def test_multiple_failures_and_independent_verification():
+    d=dataset(3,[(0,1,1),(1,2,2),(0,2,4)])
+    result=planning.analyze(d,'mesh','0','2',['0--1','0--2','0--1'],True)
+    assert result['failed_ids']==['0--1','0--2']
+    assert not result['current']['connected']
+    assert result['current']['max_rtt_ms'] is None
+    assert result['current']['route_length_km'] is None
+    assert result['baseline']['edge_count']==3
+    assert result['verification']['connected']==3
+    assert planning.analyze(d,'mesh','0','2',['0--1'])['current']['connected']
+    assert planning.analyze(d,'mesh','0','2',[])['current']['edge_count']==3
+    with pytest.raises(ValueError):planning.analyze(d,'mesh','0','2',['missing'])
+    with TestClient(app,base_url='http://127.0.0.1:8000') as client:
+        response=client.post('/api/planning/analyze',json=dict(graph=d,topology='mesh',source='0',destination='2',failed_id=['0--1','0--2']))
+        assert response.status_code==200 and not response.json()['current']['connected']
