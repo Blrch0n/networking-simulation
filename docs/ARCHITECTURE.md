@@ -50,3 +50,7 @@ Primary references: https://leafletjs.com/reference.html (default SVG paths), ht
 ## Тусдаа Python алгоритмууд
 
 `backend/app/algorithms/` дотор Kruskal, Tarjan, Dijkstra, greedy augmentation тусдаа модуль болсон. `planning.py` нь хуучин `mst`, `tarjan`, `shortest` нэрүүдийг import alias-аар хадгалж API/engine/tests-тэй нийцнэ; `designs` нь MST болон augmentation-ийг нэгтгэнэ. Алгоритмын тодорхойлолт, tie-breaking, output schema хэвээр. `python -m backend.app.algorithms.demo` нь эдгээр бодит функцийг жижиг сургалтын граф дээр ажиллуулна.
+
+## Пакетын round-trip үзүүлэн
+
+`packet.ts` нь route node/edge дарааллаас кабелийн геометрийг зөв чиглэлд нийлүүлж, кабель бүрийн уртаар жинлэсэн зам дагуу байрлалыг олно. `NetworkMap` нэг Leaflet marker-ийг requestAnimationFrame-ээр очоод буцахаар хөдөлгөнө. Нэг чиглэл 2–6 секунд: зөвхөн харагдацын хугацаа; planner RTT өөрчлөгдөхгүй. Animation нь хэрэглэгчийн товчоор эхэлнэ. Stop, маршрут/топологи/тасралт/цэс өөрчлөгдөх, unmount үед marker ба pending frame цэвэрлэгдэнэ. `prefers-reduced-motion` идэвхтэй үед хөдөлгөөнгүй төлөв харуулна.

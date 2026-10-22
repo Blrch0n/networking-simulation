@@ -22,6 +22,7 @@ test:
 	$(PY) -m pytest -q
 	node --experimental-strip-types tests/web_demo.mjs
 	node --experimental-strip-types tests/walkthrough.mjs
+	node --experimental-strip-types tests/packet.mjs
 	npm run build --prefix frontend
 reset-demo:
 	$(PY) scripts/reset.py
@@ -33,5 +34,6 @@ lab-controller:
 test-graph:
 	node --experimental-strip-types tests/web_demo.mjs
 	node --experimental-strip-types tests/walkthrough.mjs
+	node --experimental-strip-types tests/packet.mjs
 measure-planning:
 	$(PY) scripts/measure_planning.py
