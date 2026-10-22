@@ -49,3 +49,5 @@
 .packet-map-status{left:52px;right:auto;top:12px;max-width:calc(100% - 210px);font-size:11px}.packet-map-status>small{font-size:10px}.packet-map-status button{display:none}@media(max-width:760px){.packet-map-status{left:48px;max-width:calc(100% - 155px);padding:7px}.packet-map-status>small{font-size:9px}}
 
 .satellite-badge{display:inline-block;color:#7347a6;background:#f4effa;border:1px solid #e1d4ee;border-radius:4px;font-size:11px;padding:4px 7px;margin-top:5px}.live-hop{background:#edf4fd;border:1px solid #cfdfef;border-radius:4px;padding:9px;margin:10px 0}.live-hop span,.live-hop b,.live-hop code{display:block}.live-hop span{font-size:10px;color:#536b83}.live-hop b{font-size:11px;font-weight:500;margin:4px 0}.live-hop code{font-size:10px;overflow-wrap:anywhere}.route-summary>small{font-size:10px;color:var(--muted)}
+
+.packet-map-status~.map-cable-overlay{top:125px}
