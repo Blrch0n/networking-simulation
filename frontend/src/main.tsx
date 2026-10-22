@@ -11,7 +11,7 @@ import {CostComparison} from './CostComparison';
 import {kruskalTrace,dijkstraTrace} from './walkthrough';
 import {Walkthrough} from './Walkthrough';
 import type {PacketStatus} from './packet';
-import {simulationIps,packetAddresses} from './packetInfo';
+import {simulationIps,tracerouteRows} from './packetInfo';
 import {PacketInfo} from './PacketInfo';
 import './style.css';
 const EMPTY_IDS:string[]=[];
@@ -40,7 +40,9 @@ function App(){
  const ips=useMemo(()=>simulationIps(w?.graph.nodes??[]),[w?.graph.nodes]);
  const trace=page!=='algorithms'?null:traceIndex===null?null:traces[Math.min(traceIndex,traces.length-1)];
  if(!w||!a)return <div className="loading"><h1>Шилэн сүлжээ</h1><p>{error||'Өгөгдөл ачаалж байна…'}</p>{error&&<button onClick={()=>location.reload()}>Дахин ачаалах</button>}</div>;
- const addresses=packetAddresses(ips,w.destination,packetStatus==='returning');
+ const traceRows=tracerouteRows(w.graph.nodes,w.graph.edges,a.current.route,ips);
+ const traceDestination=traceRows.at(-1)?.ip??ips.get(w.destination)??'—';
+ const addresses=packetStatus==='returning'?{source:traceDestination,destination:ips.get(w.source)}:{source:ips.get(w.source),destination:traceDestination};
  const nodes=w.graph.nodes,installed=a.designs[w.topology],m=a.current,baseline=a.baseline;
  const name=(id:string)=>nodes.find(n=>n.id===id)?.name??id;
  const selected=installed.find(e=>e.id===selectedCable),city=nodes.find(n=>n.id===selectedCity),failedEdge=installed.find(e=>e.id===a.failed_id);
@@ -65,7 +67,7 @@ function App(){
     <button className="swap-route" onClick={()=>setW({...w,source:w.destination,destination:w.source})} aria-label="Эхлэх ба хүрэх хотыг солих">Чиглэл солих ↔</button>
     <div className="route-summary"><div><span>Замын урт</span><b>{fmt(m.route_length_km)} км</b></div><div><span>Сонгосон замын RTT</span><b>{fmt(m.route_rtt_ms)} ms</b></div><p>{m.route.length?m.route.map(name).join(' → '):'Хүрэх зам байхгүй.'}</p></div>
     <div className="packet-controls"><button disabled={!m.route_edges.length} onClick={()=>{if(packetStatus==='outbound'||packetStatus==='returning'){stopPacket()}else{setPacketHop(0);setPacketStatus('outbound');setPacketRun(++packetCounter.current);document.querySelector('.map-panel')?.scrollIntoView({block:'start',behavior:'auto'})}}}>{packetStatus==='outbound'||packetStatus==='returning'?'Пакет зогсоох':packetStatus==='complete'?'Дахин илгээх':'Пакет илгээх'}</button><span role="status" className="packet-status">{packetStatus==='outbound'?'Очих →':packetStatus==='returning'?'← Буцах':packetStatus==='complete'?'Очоод буцлаа':packetStatus==='reduced'?'Хөдөлгөөн багасгах тохиргоо идэвхтэй':''}</span><small>Удаашруулсан үзүүлэн · бодит ping биш</small></div>
-    <PacketInfo nodes={nodes} ips={ips} source={w.source} destination={w.destination} route={m.route} status={packetStatus} targetHop={packetHop}/>
+    <PacketInfo edges={w.graph.edges} nodes={nodes} ips={ips} source={w.source} destination={w.destination} route={m.route} status={packetStatus} targetHop={packetHop}/>
     <details className="map-settings"><summary>Тасралтын тохиргоо</summary><div className="advanced-switches"><label className="check"><input type="checkbox" checked={highlight} onChange={e=>setHighlight(e.target.checked)}/>Гүүрийг тодруулах</label>
     <label className="check failure-mode"><input type="checkbox" checked={multiple} onChange={e=>{setMultiple(e.target.checked);setFailed([])}}/>Олон кабель зэрэг таслах</label>
     <p className="note">{multiple?'2-Edge нь олон тасралтад баталгаа өгөхгүй.':'Дараагийн тасралт өмнөхийг орлоно.'}</p>

@@ -11,21 +11,17 @@ export function simulationIps(nodes:City[]):Map<string,string>{
  return result;
 }
 
-// RFC 5737 documentation blocks: never actual globally reachable public IPs.
-export const EXAMPLE_INTERNET_IP='198.51.100.10';
-export const EXAMPLE_GATEWAY_IP='203.0.113.1';
-/** Educational inbound DNAT / reply SNAT at the city network boundary.
- * The external segment has no geographic cable or measured latency in this model.
- */
-export function packetAddresses(ips:Map<string,string>,destination:string,returning=false){
- const privateDestination=ips.get(destination)??'—';
- return returning?{
-  source:privateDestination,destination:EXAMPLE_INTERNET_IP,
-  sourceType:'Private',destinationType:'Public жишээ',
-  outsideSource:EXAMPLE_GATEWAY_IP,outsideDestination:EXAMPLE_INTERNET_IP,
- }:{
-  source:EXAMPLE_INTERNET_IP,destination:privateDestination,
-  sourceType:'Public жишээ',destinationType:'Private',
-  outsideSource:EXAMPLE_INTERNET_IP,outsideDestination:EXAMPLE_GATEWAY_IP,
- };
+/** Stable documentation IPs for simulated backbone router interfaces. */
+export function publicSimulationIps(nodes:City[]):Map<string,string>{
+ return new Map([...nodes].sort((a,b)=>cmp(a.id,b.id)).map((node,index)=>[node.id,`203.0.113.${index+1}`]));
+}
+/** TTL-style city hops, excluding the originating city. No fabricated jitter or loss. */
+export function tracerouteRows(nodes:City[],edges:import('./graph.ts').Cable[],route:string[],ips:Map<string,string>){
+ const publicIps=publicSimulationIps(nodes);let km=0;
+ return route.slice(1).map((id,index)=>{
+  const previous=route[index];const edge=edges.find(e=>(e.u===previous&&e.v===id)||(e.v===previous&&e.u===id));
+  if(!edge)throw new Error('Trace route contains a missing cable');
+  km+=edge.length_km;
+  return {id,hop:index+1,name:nodes.find(n=>n.id===id)?.name??id,ip:index===0?ips.get(id)??'—':publicIps.get(id)??'—',kind:index===0?'Private':'Public жишээ',rtt:km/100};
+ });
 }
