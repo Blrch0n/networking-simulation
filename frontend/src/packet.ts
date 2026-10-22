@@ -3,7 +3,7 @@ import {estimateDistance} from './graph.ts';
 import type {Dataset} from './graph.ts';
 export type Point=[number,number]; // Leaflet latitude, longitude.
 export type PacketStatus='idle'|'outbound'|'returning'|'complete'|'reduced';
-type Segment={from:Point;to:Point;start:number;end:number};
+type Segment={from:Point;to:Point;start:number;end:number;leg:number};
 export type PacketPath={segments:Segment[];lengthKm:number};
 function distance(a:Point,b:Point){return estimateDistance({id:'a',name:'a',lat:a[0],lon:a[1]},{id:'b',name:'b',lat:b[0],lon:b[1]})}
 export function packetPath(graph:Dataset,routeNodes:string[],routeEdges:string[]):PacketPath|null{
@@ -21,7 +21,7 @@ export function packetPath(graph:Dataset,routeNodes:string[],routeEdges:string[]
    if(visualLength>0&&lengths[j]===0)continue;
    const weight=visualLength>0?lengths[j]/visualLength:1/lengths.length;
    const next=lengthKm+edge.length_km*weight;
-   segments.push({from:points[j],to:points[j+1],start:lengthKm,end:next});lengthKm=next;
+   segments.push({from:points[j],to:points[j+1],start:lengthKm,end:next,leg:i});lengthKm=next;
   }
  }
  return segments.length?{segments,lengthKm}:null;
@@ -35,4 +35,11 @@ export function packetPosition(path:PacketPath,progress:number):Point{
 export function roundTripPhase(elapsed:number,legDuration:number){
  const time=Math.max(0,elapsed)/legDuration;
  return {progress:time<=1?Math.min(1,time):Math.max(0,2-time),status:time>=2?'complete':time>=1?'returning':'outbound'} as const;
+}
+
+/** Next city index in the original outbound route; never invent extra hops. */
+export function packetTargetHop(path:PacketPath,progress:number,returning=false):number{
+ const target=Math.max(0,Math.min(1,progress))*path.lengthKm;
+ const segment=returning?(path.segments.find(s=>s.end>=target)??path.segments.at(-1)!):(path.segments.find(s=>s.end>target)??path.segments.at(-1)!);
+ return returning?segment.leg:segment.leg+1;
 }

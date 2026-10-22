@@ -54,3 +54,5 @@ Primary references: https://leafletjs.com/reference.html (default SVG paths), ht
 ## Пакетын round-trip үзүүлэн
 
 `packet.ts` нь route node/edge дарааллаас кабелийн геометрийг зөв чиглэлд нийлүүлж, кабель бүрийн уртаар жинлэсэн зам дагуу байрлалыг олно. `NetworkMap` нэг Leaflet marker-ийг requestAnimationFrame-ээр очоод буцахаар хөдөлгөнө. Нэг чиглэл 2–6 секунд: зөвхөн харагдацын хугацаа; planner RTT өөрчлөгдөхгүй. Animation нь хэрэглэгчийн товчоор эхэлнэ. Stop, маршрут/топологи/тасралт/цэс өөрчлөгдөх, unmount үед marker ба pending frame цэвэрлэгдэнэ. `prefers-reduced-motion` идэвхтэй үед хөдөлгөөнгүй төлөв харуулна.
+
+`packetInfo.ts` нь node ID-аас deterministic hash үүсгэж 10.0.0.0/16 дотор синтетик, давхцаагүй хаяг сонгоно. Энэ нь хотыг таних /32 жишээ хаяг; интерфэйс эсвэл subnet routing тохиргоо биш. `PacketInfo.tsx` нь source/destination IP, чиглэл тус бүрийн hop жагсаалтыг үзүүлнэ. `packetTargetHop` нь animation-ийн бодит segment-ээс дараагийн хотын индексийг олж, зөвхөн hop өөрчлөгдөхөд React state шинэчилнэ. Буцах үед IP хоёр тал болон hop дараалал урвуу болно. RTT per-hop хэмжилт зохиож харуулахгүй.

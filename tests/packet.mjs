@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {packetPath,packetPosition,roundTripPhase} from '../frontend/src/packet.ts';
+import {packetPath,packetPosition,packetTargetHop,roundTripPhase} from '../frontend/src/packet.ts';
+import {simulationIps} from '../frontend/src/packetInfo.ts';
 import {analyze,validateDataset} from '../frontend/src/graph.ts';
 const graph={nodes:[{id:'a',name:'A',lat:0,lon:0},{id:'b',name:'B',lat:0,lon:2},{id:'c',name:'C',lat:0,lon:5}],edges:[{id:'ab',u:'a',v:'b',length_km:2,geometry:{type:'LineString',coordinates:[[2,0],[1,0],[0,0]]}},{id:'bc',u:'b',v:'c',length_km:3}]};
 const path=packetPath(graph,['a','b','c'],['ab','bc']);
@@ -23,3 +24,14 @@ for(const kind of ['mst','resilient','mesh']){
  }
 }
 console.log('PASS: round-trip timing, ordered/reversed geometry, edge-length weighting, route changes, no path and coincident coordinates');
+
+const ips=simulationIps(original.nodes);
+assert.equal(ips.size,22);assert.equal(new Set(ips.values()).size,22);
+assert.deepEqual(simulationIps([...original.nodes].reverse()),ips);
+for(const ip of ips.values()){const bytes=ip.split('.').map(Number);assert.equal(bytes[0],10);assert.equal(bytes[1],0);assert(bytes[2]>=0&&bytes[2]<=255);assert(bytes[3]>=1&&bytes[3]<=254)}
+assert.equal(simulationIps([]).size,0);
+const hundred=simulationIps(Array.from({length:100},(_,i)=>({id:`city-${i}`,name:String(i),lat:47,lon:100})));
+assert.equal(new Set(hundred.values()).size,100);
+assert.equal(packetTargetHop(path,0),1);assert.equal(packetTargetHop(path,.2),1);assert.equal(packetTargetHop(path,.4),2);assert.equal(packetTargetHop(path,1),2);
+assert.equal(packetTargetHop(path,1,true),1);assert.equal(packetTargetHop(path,.4,true),0);assert.equal(packetTargetHop(path,.2,true),0);
+console.log('PASS: deterministic unique private simulation IPs, hop targets and return direction');
