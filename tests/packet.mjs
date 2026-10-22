@@ -102,3 +102,21 @@ assert.equal(Object.keys(sample).length,3);for(const [id,ms] of Object.entries(s
 const override=packetTransport(triangle,'resilient',['ab','bc'],'a','c',loaded.route,loaded.routeEdges,loaded.rtt);
 assert(override.satellite);assert.equal(override.rtt,60);
 console.log('PASS: congestion time-weighted rerouting, original-route comparison, clearing, no alternative, disconnected routes, sampling, walkthrough parity and satellite priority');
+
+const {balancedPaths}=await import('../frontend/src/congestion.ts');
+const alternatives=balancedPaths(triangle.nodes,triangle.edges,'a','c',{ab:20});
+assert.equal(alternatives.length,2);
+assert.deepEqual(alternatives[0].route,['a','c']);assert.deepEqual(alternatives[1].route,['a','b','c']);
+assert.equal(alternatives[0].rtt,.08);assert.equal(alternatives[1].rtt,20.05);
+assert.equal(balancedPaths(graph.nodes,graph.edges,'a','c',{ab:20}).length,1);
+assert.equal(balancedPaths(graph.nodes,[],'a','c',{}).length,0);
+assert.equal(balancedPaths(graph.nodes,graph.edges,'a','a',{}).length,0);
+for(const path of alternatives){assert.equal(new Set(path.route).size,path.route.length);assert.equal(path.hopRtts.get('c'),path.rtt);assert(packetPath(triangle,path.route,path.routeEdges))}
+assert.equal(JSON.stringify(triangle),beforeTraffic);
+// A shared trunk is allowed, but the two complete paths must be distinct.
+const shared={nodes:[...graph.nodes,{id:'d',name:'D',lat:1,lon:3}],edges:[{id:'ab',u:'a',v:'b',length_km:1},{id:'bc',u:'b',v:'c',length_km:1},{id:'bd',u:'b',v:'d',length_km:1},{id:'dc',u:'d',v:'c',length_km:1}]};
+const sharedPaths=balancedPaths(shared.nodes,shared.edges,'a','c',{ab:10});
+assert.equal(sharedPaths.length,2);assert(sharedPaths.every(path=>path.routeEdges.includes('ab')));
+const cutPaths=balancedPaths(triangle.nodes,triangle.edges.filter(edge=>edge.id!=='ab'),'a','c',{ab:20});
+assert.equal(cutPaths.length,1);assert(cutPaths.every(path=>!path.routeEdges.includes('ab')));
+console.log('PASS: two distinct loop-free latency paths, stable order, shared trunks, cut exclusion, unique-path and unreachable balancing cases');
