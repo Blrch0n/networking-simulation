@@ -1,14 +1,14 @@
 import {useState} from 'react';
 import {saveCity,saveCable,deleteCity,validateDataset,pair} from './graph';
 import type {Dataset,City} from './graph';
-type Props={graph:Dataset;onChange:(d:Dataset)=>void;onUndo:()=>void;canUndo:boolean;onReset:()=>void};
-export function Editor({graph,onChange,onUndo,canUndo,onReset}:Props){
+type Props={defaultOpen?:boolean;graph:Dataset;onChange:(d:Dataset)=>void;onUndo:()=>void;canUndo:boolean;onReset:()=>void};
+export function Editor({graph,onChange,onUndo,canUndo,onReset,defaultOpen=false}:Props){
  const [error,setError]=useState(''),[message,setMessage]=useState(''),[editing,setEditing]=useState<string|null>(null),[city,setCity]=useState({id:'',name:'',lat:'',lon:''}),[auto,setAuto]=useState(false),[u,setU]=useState(''),[v,setV]=useState(''),[length,setLength]=useState('');
  const apply=(fn:()=>Dataset,msg:string)=>{try{onChange(fn());setError('');setMessage(msg);return true}catch(e){setError(String(e));setMessage('');return false}};
  const chooseCity=(id:string)=>{const n=graph.nodes.find(x=>x.id===id);setEditing(n?.id??null);setCity(n?{id:n.id,name:n.name,lat:String(n.lat),lon:String(n.lon)}:{id:'',name:'',lat:'',lon:''})};
  const cable=graph.edges.find(e=>pair(e.u,e.v)===pair(u,v));
  const chooseCable=(id:string)=>{const e=graph.edges.find(x=>x.id===id);if(e){setU(e.u);setV(e.v);setLength(String(e.length_km))}else{setU('');setV('');setLength('')}};
- return <details className="editor panel"><summary>Өгөгдөл засах <span>{graph.nodes.length} хот · {graph.edges.length} боломжит кабель</span></summary><div className="details-body">
+ return <details className="editor panel" open={defaultOpen}><summary>Өгөгдөл засах <span>{graph.nodes.length} хот · {graph.edges.length} боломжит кабель</span></summary><div className="details-body">
   <div className="editor-actions"><button disabled={!canUndo} onClick={()=>{onUndo();setError('');setMessage('Сүүлийн өгөгдлийн өөрчлөлтийг буцаав.');chooseCity('');chooseCable('')}}>Өөрчлөлт буцаах</button><button onClick={()=>{onReset();setError('');setMessage('Анхны 22 хотын өгөгдлийг сэргээв.');chooseCity('');chooseCable('')}}>Анхны 22 хотыг сэргээх</button></div>
   {error&&<p className="error" role="alert">{error}</p>}{message&&<p className="success" role="status">{message}</p>}
   <div className="editor-grid"><form onSubmit={e=>{e.preventDefault();if(!city.lat.trim()||!city.lon.trim()){setError('Координат оруулна уу.');return}const n:City={id:city.id.trim(),name:city.name.trim(),lat:Number(city.lat),lon:Number(city.lon)};if(apply(()=>saveCity(graph,n,editing,auto),'Хотыг хадгалж, гурван сүлжээг дахин тооцоолов.'))chooseCity('')}}>

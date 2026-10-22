@@ -3,7 +3,7 @@ import type {Analysis} from './graph';
 import {COLORS} from './NetworkMap';
 const labels={mst:'MST',resilient:'2-Edge',mesh:'Full Mesh'};
 const money=(value:number)=>`$${value.toLocaleString('mn-MN',{maximumFractionDigits:0})}`;
-export function CostComparison({comparison}:Pick<Analysis,'comparison'>){
+export function CostComparison({comparison,defaultOpen=false}:Pick<Analysis,'comparison'>&{defaultOpen?:boolean}){
  const [input,setInput]=useState('20000'),[logarithmic,setLogarithmic]=useState(false);
  const rate=Number(input),valid=input.trim()!==''&&Number.isFinite(rate)&&rate>=0&&rate<=1e12;
  const mst=comparison.find(row=>row.kind==='mst')!.metrics.length_km;
@@ -11,7 +11,7 @@ export function CostComparison({comparison}:Pick<Analysis,'comparison'>){
  const mesh=comparison.find(row=>row.kind==='mesh')!.metrics.length_km;
  const scale=(length:number)=>logarithmic?Math.log1p(length):length;
  const maximum=Math.max(...comparison.map(row=>scale(row.metrics.length_km)),1);
- return <details className="panel cost-comparison"><summary>Зардлын харьцуулалт</summary><div className="details-body">
+ return <details className="panel cost-comparison" open={defaultOpen}><summary>Зардлын харьцуулалт</summary><div className="details-body">
   <div className="cost-controls"><label>Кабелийн өртөг (USD / км, таамаглал)<input type="number" min="0" max="1000000000000" step="any" value={input} aria-invalid={!valid} onChange={event=>setInput(event.target.value)}/></label><label className="check"><input type="checkbox" checked={logarithmic} onChange={event=>setLogarithmic(event.target.checked)}/>Логарифм масштаб (Full Mesh маш том тул)</label></div>
   <p className="note">Өртөг = урт × USD/км. Жишээ таамаглал; тоног төхөөрөмж, ашиглалт, татвар ороогүй.</p>
   {!valid&&<p role="alert" className="bad-text">0–1,000,000,000,000 хоорондох хүчинтэй үнэ оруулна уу.</p>}
