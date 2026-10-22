@@ -27,3 +27,5 @@
 
 .editor-page{margin-top:18px}
 @media(max-width:480px){.top-menu{display:grid;grid-template-columns:1fr 1fr;gap:4px}.top-menu button{font-size:13px;padding:9px 8px}}
+
+@media(max-width:480px){.top-menu{grid-template-columns:repeat(3,1fr)}.top-menu button{font-size:12px}}

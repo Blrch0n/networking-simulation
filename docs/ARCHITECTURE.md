@@ -45,7 +45,7 @@ Primary references: https://leafletjs.com/reference.html (default SVG paths), ht
 
 ## Planning workspace ба алгоритмын тайлбар
 
-`main.tsx` нь дээд цэсээр map / algorithms / comparison / editor хэсгийг сонгоно. Сонгоогүй хэсэг `hidden` тул accessibility tree болон дэлгэцэд харагдахгүй; map instance, editor draft, cost inputs хадгалагдана. Tarjan-ийн хүснэгт нь одоогийн DFS утгууд, Greedy-ийн хүснэгт нь эрүүл 2-Edge augmentation-ийн үр дүн. Нэг Leaflet instance-ийг хадгална. `walkthrough.ts` нь React-оос тусдаа deterministic Kruskal ба Dijkstra snapshot үүсгэнэ; `Walkthrough.tsx` нь алхам, буцах, эцсийн үр дүн, slider болон зайн хүснэгтийг үзүүлнэ. `NetworkMap` нь тайлбарын overlay, баталгаажсан хотууд, candidate кабель болон өмнөх маршрутын цэгэн шугамыг зурна. Overlay нь `graph.ts`-ийн тооцоо эсвэл backend-ийн суурь загварыг өөрчлөхгүй. Тестээр trace-ийн эцсийн кабель/маршрутыг бодит тооцоотой тулгана.
+`main.tsx` нь дээд цэсээр map / algorithms / comparison хэсгийг сонгоно. Сонгоогүй хэсэг `hidden` тул accessibility tree болон дэлгэцэд харагдахгүй; map instance, cost inputs хадгалагдана. Tarjan-ийн хүснэгт нь одоогийн DFS утгууд, Greedy-ийн хүснэгт нь эрүүл 2-Edge augmentation-ийн үр дүн. Нэг Leaflet instance-ийг хадгална. `walkthrough.ts` нь React-оос тусдаа deterministic Kruskal ба Dijkstra snapshot үүсгэнэ; `Walkthrough.tsx` нь алхам, буцах, эцсийн үр дүн, slider болон зайн хүснэгтийг үзүүлнэ. `NetworkMap` нь тайлбарын overlay, баталгаажсан хотууд, candidate кабель болон өмнөх маршрутын цэгэн шугамыг зурна. Overlay нь `graph.ts`-ийн тооцоо эсвэл backend-ийн суурь загварыг өөрчлөхгүй. Тестээр trace-ийн эцсийн кабель/маршрутыг бодит тооцоотой тулгана.
 
 ## Тусдаа Python алгоритмууд
 
