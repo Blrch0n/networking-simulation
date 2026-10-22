@@ -10,3 +10,22 @@ export function simulationIps(nodes:City[]):Map<string,string>{
  }
  return result;
 }
+
+// RFC 5737 documentation blocks: never actual globally reachable public IPs.
+export const EXAMPLE_INTERNET_IP='198.51.100.10';
+export const EXAMPLE_GATEWAY_IP='203.0.113.1';
+/** Educational inbound DNAT / reply SNAT at the city network boundary.
+ * The external segment has no geographic cable or measured latency in this model.
+ */
+export function packetAddresses(ips:Map<string,string>,destination:string,returning=false){
+ const privateDestination=ips.get(destination)??'—';
+ return returning?{
+  source:privateDestination,destination:EXAMPLE_INTERNET_IP,
+  sourceType:'Private',destinationType:'Public жишээ',
+  outsideSource:EXAMPLE_GATEWAY_IP,outsideDestination:EXAMPLE_INTERNET_IP,
+ }:{
+  source:EXAMPLE_INTERNET_IP,destination:privateDestination,
+  sourceType:'Public жишээ',destinationType:'Private',
+  outsideSource:EXAMPLE_INTERNET_IP,outsideDestination:EXAMPLE_GATEWAY_IP,
+ };
+}

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {packetPath,packetPosition,packetTargetHop,roundTripPhase} from '../frontend/src/packet.ts';
-import {simulationIps} from '../frontend/src/packetInfo.ts';
+import {simulationIps,packetAddresses,EXAMPLE_INTERNET_IP,EXAMPLE_GATEWAY_IP} from '../frontend/src/packetInfo.ts';
 import {analyze,validateDataset} from '../frontend/src/graph.ts';
 const graph={nodes:[{id:'a',name:'A',lat:0,lon:0},{id:'b',name:'B',lat:0,lon:2},{id:'c',name:'C',lat:0,lon:5}],edges:[{id:'ab',u:'a',v:'b',length_km:2,geometry:{type:'LineString',coordinates:[[2,0],[1,0],[0,0]]}},{id:'bc',u:'b',v:'c',length_km:3}]};
 const path=packetPath(graph,['a','b','c'],['ab','bc']);
@@ -35,3 +35,16 @@ assert.equal(new Set(hundred.values()).size,100);
 assert.equal(packetTargetHop(path,0),1);assert.equal(packetTargetHop(path,.2),1);assert.equal(packetTargetHop(path,.4),2);assert.equal(packetTargetHop(path,1),2);
 assert.equal(packetTargetHop(path,1,true),1);assert.equal(packetTargetHop(path,.4,true),0);assert.equal(packetTargetHop(path,.2,true),0);
 console.log('PASS: deterministic unique private simulation IPs, hop targets and return direction');
+
+const inbound=packetAddresses(ips,'ulaanbaatar');
+assert.equal(inbound.source,EXAMPLE_INTERNET_IP);
+assert.equal(inbound.destination,ips.get('ulaanbaatar'));
+assert.equal(inbound.outsideSource,EXAMPLE_INTERNET_IP);
+assert.equal(inbound.outsideDestination,EXAMPLE_GATEWAY_IP);
+const reply=packetAddresses(ips,'ulaanbaatar',true);
+assert.equal(reply.source,inbound.destination);
+assert.equal(reply.destination,inbound.source);
+assert.equal(reply.outsideSource,EXAMPLE_GATEWAY_IP);
+assert.equal(reply.outsideDestination,EXAMPLE_INTERNET_IP);
+assert.equal(packetAddresses(ips,'missing').destination,'—');
+console.log('PASS: illustrative public/private NAT headers and reply direction');

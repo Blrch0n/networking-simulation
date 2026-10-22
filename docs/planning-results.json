@@ -1,7 +1,7 @@
 {
-  "measured_at": "2026-10-22T05:43:26.386Z",
+  "measured_at": "2026-10-22T05:58:40.035Z",
   "node_version": "v26.8.2",
-  "browser_graph_total_ms": 223.215586,
+  "browser_graph_total_ms": 307.779587,
   "parity_cases": 55,
   "topologies": {
     "mst": {
