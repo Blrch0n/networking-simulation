@@ -1,3 +1,4 @@
+import {SATELLITE_ID,SATELLITE_IP} from './transport.ts';
 import {cmp} from './graph.ts';
 import type {City} from './graph.ts';
 /** Synthetic per-city identifiers, not real router or interface configuration. */
@@ -16,12 +17,12 @@ export function publicSimulationIps(nodes:City[]):Map<string,string>{
  return new Map([...nodes].sort((a,b)=>cmp(a.id,b.id)).map((node,index)=>[node.id,`203.0.113.${index+1}`]));
 }
 /** TTL-style city hops, excluding the originating city. No fabricated jitter or loss. */
-export function tracerouteRows(nodes:City[],edges:import('./graph.ts').Cable[],route:string[],ips:Map<string,string>){
+export function tracerouteRows(nodes:City[],edges:import('./graph.ts').Cable[],route:string[],ips:Map<string,string>,hopRtts?:Map<string,number>){
  const publicIps=publicSimulationIps(nodes);let km=0;
  return route.slice(1).map((id,index)=>{
   const previous=route[index];const edge=edges.find(e=>(e.u===previous&&e.v===id)||(e.v===previous&&e.u===id));
   if(!edge)throw new Error('Trace route contains a missing cable');
   km+=edge.length_km;
-  return {id,hop:index+1,name:nodes.find(n=>n.id===id)?.name??id,ip:index===0?ips.get(id)??'—':publicIps.get(id)??'—',kind:index===0?'Private':'Public жишээ',rtt:km/100};
+  return {id,hop:index+1,name:nodes.find(n=>n.id===id)?.name??id,ip:id===SATELLITE_ID?SATELLITE_IP:index===0||index===route.length-2?ips.get(id)??'—':publicIps.get(id)??'—',kind:id===SATELLITE_ID?'Satellite жишээ':index===0||index===route.length-2?'Private':'Public жишээ',rtt:hopRtts?.get(id)??km/100};
  });
 }

@@ -110,3 +110,9 @@ Docker эрхгүй бол өөрийн терминалд `sudo docker compose 
 Зардлын харьцуулалт: засварлах боломжтой USD/км таамаглалаар эрүүл гурван загварын нийт өртөг, MST-ээс нэмэгдэх өртөг болон уртын графикийг харуулна. Анхны $20,000/км нь үнийн санал биш; тусдаа тоног төхөөрөмж, ашиглалт, татварыг оруулаагүй.
 
 Олон тасралтын нэмэлт горим: «Олон кабель зэрэг таслах»-ыг идэвхжүүлээд хэд хэдэн кабель тасална. Кабель бүрийг тусад нь эсвэл бүгдийг сэргээж болно. Горим, топологи, граф өөрчлөхөд тасралтууд цэвэрлэгдэнэ. 2-Edge нь зөвхөн нэг кабелийн тасралтад баталгаатай; олон тасралтын үр дүн сонгосон кабелиудаас хамаарна. Нийт шалгалт нь эрүүл суурь загварт нэг кабелийг тус тусад нь тасалсан хэвээр.
+
+### Starlink classroom failover
+
+In the 2-Edge view, cable cuts accumulate automatically. Two or more distinct cuts activate a simulated endpoint → Starlink relay → endpoint path, even if a cable route remains. Restoring to fewer than two cuts returns packet transport to the cable path. Both endpoints are assumed to have terminals. This is a classroom policy, not an implementation or measurement of the Starlink service. Its default round-trip latency is an editable **60 ms assumption**, split equally across two modeled legs. The relay map position is schematic, and its geometry is only for animation; it is excluded from installed cable length, cost, bridge counts and physical-network connectivity checks. All-city connectivity is still the cable planner's result.
+
+Source/destination endpoint IPs are stable across failover and router hops; replies reverse the endpoints. The active current/next-hop interface addresses change with the packet's position. Documentation address 198.51.100.1 identifies the simulated satellite relay; no NAT, real traceroute or public-IP lookup is performed. `frontend/src/transport.ts` contains the failover policy and hop pairing; `tests/packet.mjs` covers activation, restoration, RTT and outbound/reply traversal.

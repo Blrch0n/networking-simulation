@@ -39,8 +39,8 @@ console.log('PASS: deterministic unique private simulation IPs, hop targets and 
 const trace=tracerouteRows(graph.nodes,graph.edges,['a','b','c'],simulationIps(graph.nodes));
 assert.deepEqual(trace.map(row=>row.hop),[1,2]);
 assert.deepEqual(trace.map(row=>row.rtt),[.02,.05]);
-assert.equal(trace[0].kind,'Private');assert.equal(trace[1].kind,'Public жишээ');
-assert.equal(trace[1].ip,'203.0.113.3');
+assert.equal(trace[0].kind,'Private');assert.equal(trace[1].kind,'Private');
+assert.equal(trace[1].ip,simulationIps(graph.nodes).get('c'));
 assert.deepEqual(publicSimulationIps([...graph.nodes].reverse()),publicSimulationIps(graph.nodes));
 assert.deepEqual(tracerouteRows(graph.nodes,graph.edges,[],new Map()),[]);
 assert.deepEqual(tracerouteRows(graph.nodes,graph.edges,['a'],new Map()),[]);
@@ -52,3 +52,29 @@ for(const kind of ['mst','resilient','mesh']){
  assert(Math.abs(rows.at(-1).rtt-metrics.route_rtt_ms)<1e-9);
 }
 console.log('PASS: TTL hop numbering, mixed example IP roles, cumulative RTT and destination parity');
+
+const {packetTransport,packetHopPair,SATELLITE_ID,SATELLITE_IP}=await import('../frontend/src/transport.ts');
+const snapshot=JSON.stringify(graph);
+const satellite=packetTransport(graph,'resilient',['ab','bc'],'a','c',[],[],null);
+assert.equal(satellite.satellite,true);assert.equal(satellite.rtt,60);
+assert.deepEqual(satellite.route,['a',SATELLITE_ID,'c']);
+assert.equal(satellite.routeEdges.length,2);
+const satellitePath=packetPath(satellite.graph,satellite.route,satellite.routeEdges);
+assert(satellitePath);assert.equal(packetTargetHop(satellitePath,.25),1);assert.equal(packetTargetHop(satellitePath,.75),2);
+assert.equal(JSON.stringify(graph),snapshot);
+const satelliteTrace=tracerouteRows(satellite.graph.nodes,satellite.graph.edges,satellite.route,simulationIps(graph.nodes),satellite.hopRtts);
+assert.deepEqual(satelliteTrace.map(row=>row.rtt),[30,60]);assert.equal(satelliteTrace[0].ip,SATELLITE_IP);assert.equal(satelliteTrace[1].ip,simulationIps(graph.nodes).get('c'));
+for(const kind of ['mst','mesh'])assert.equal(packetTransport(graph,kind,['ab','bc'],'a','c',[],[],null).satellite,false);
+for(const failures of [[],['ab'],['ab','ab']])assert.equal(packetTransport(graph,'resilient',failures,'a','c',['a','b','c'],['ab','bc'],.05).satellite,false);
+assert.equal(packetTransport(graph,'resilient',['ab','bc'],'a','a',['a'],[],0).satellite,false);
+assert.equal(packetTransport(graph,'resilient',['ab','bc'],'missing','c',[],[],null).satellite,false);
+assert.equal(packetTransport(graph,'resilient',['ab','bc'],'a','c',[],[],null,85).rtt,85);
+// Policy activates even when a healthy cable path remains; restoration deactivates.
+assert.equal(packetTransport(graph,'resilient',['ab','bc'],'a','c',['a','b','c'],['ab','bc'],.05).satellite,true);
+assert.equal(packetTransport(graph,'resilient',['ab'],'a','c',['a','b','c'],['ab','bc'],.05).rtt,.05);
+assert.deepEqual(packetHopPair(satellite.route,1),{current:'a',next:SATELLITE_ID});
+assert.deepEqual(packetHopPair(satellite.route,2),{current:SATELLITE_ID,next:'c'});
+assert.deepEqual(packetHopPair(satellite.route,1,true),{current:'c',next:SATELLITE_ID});
+assert.deepEqual(packetHopPair(satellite.route,0,true),{current:SATELLITE_ID,next:'a'});
+assert.equal(packetHopPair(satellite.route,null),null);
+console.log('PASS: two-failure Starlink policy, restoration, assumed RTT, unchanged cable graph, satellite geometry and both hop directions');
