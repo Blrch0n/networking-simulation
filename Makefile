@@ -23,6 +23,7 @@ test:
 	node --experimental-strip-types tests/web_demo.mjs
 	node --experimental-strip-types tests/walkthrough.mjs
 	node --experimental-strip-types tests/packet.mjs
+	node --experimental-strip-types tests/load_balance.mjs
 	npm run build --prefix frontend
 reset-demo:
 	$(PY) scripts/reset.py
@@ -35,5 +36,6 @@ test-graph:
 	node --experimental-strip-types tests/web_demo.mjs
 	node --experimental-strip-types tests/walkthrough.mjs
 	node --experimental-strip-types tests/packet.mjs
+	node --experimental-strip-types tests/load_balance.mjs
 measure-planning:
 	$(PY) scripts/measure_planning.py

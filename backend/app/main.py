@@ -236,4 +236,24 @@ def analyze_planning(body:PlanningInput):
     try:return planning.analyze(body.graph,body.topology,body.source,body.destination,body.failed_id,body.verify)
     except (ValueError,KeyError,TypeError) as ex:raise HTTPException(422,str(ex))
 
+# Dedicated traffic API leaves the physical planning response unchanged.
+from . import traffic
+class LoadBalanceInput(BaseModel):
+    graph: dict
+    topology: Literal['mst', 'resilient', 'mesh'] = 'resilient'
+    source: str = ''
+    destination: str = ''
+    failed_id: str | list[str] | None = None
+    congestion: dict[str, object] = Field(default_factory=dict)
+    packet_count: int = Field(default=2, ge=0, le=1000, strict=True)
+    start_index: int = Field(default=0, ge=0, le=1_000_000_000, strict=True)
+
+@app.post('/api/planning/load-balance')
+def load_balance_planning(body: LoadBalanceInput):
+    try:
+        return traffic.load_balance(body.graph, body.topology, body.source, body.destination,
+                                    body.failed_id, body.congestion, body.packet_count, body.start_index)
+    except (ValueError, KeyError, TypeError) as ex:
+        raise HTTPException(422, str(ex))
+
 if (engine.ROOT/'frontend/dist').exists():app.mount('/',StaticFiles(directory=engine.ROOT/'frontend/dist',html=True),name='frontend')

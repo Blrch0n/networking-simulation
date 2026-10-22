@@ -36,14 +36,15 @@ make stop             # Зөвхөн төслийн Uvicorn серверийг �
 
 ## Алгоритмын Python кодыг багшид үзүүлэх
 
-Дөрвөн алгоритм тусдаа, уншихад хялбар Монгол тайлбартай файлд байна:
+Таван алгоритм тусдаа, уншихад хялбар Монгол тайлбартай файлд байна:
 
 - [Kruskal](backend/app/algorithms/kruskal.py)
 - [Tarjan](backend/app/algorithms/tarjan.py)
 - [Dijkstra](backend/app/algorithms/dijkstra.py)
 - [Greedy augmentation heuristic](backend/app/algorithms/greedy_augmentation.py)
+- [Round Robin](backend/app/algorithms/round_robin.py)
 
-Локал simulation нь эдгээрийг `backend/app/planning.py`-аар дамжуулан ашиглана.
+Локал simulation нь эдгээрийг `backend/app/planning.py` болон `backend/app/traffic.py`-аар дамжуулан ашиглана.
 Тусдаа хуулбар implementation биш. [Товч заавар](backend/app/algorithms/README_MN.md).
 
 ```bash
@@ -128,3 +129,11 @@ Source/destination endpoint IPs are stable across failover and router hops; repl
 Ачаалал идэвхтэй, Starlink идэвхгүй, хоёр өөр маршруттай үед 50/50 packet round robin ажиллана. «Пакет илгээх» нь хоёр пакетыг дараалан, зам тус бүрээр очоод буцаана; хариу нь явсан замаараа буцна. RTT нь сонгосон зам тус бүрийн тогтмол latency загвар. Эхний зам хамгийн бага RTT-тэй; хоёр дахь нь түүнээс өөр хамгийн бага RTT-тэй энгийн зам. Хоёр маршрут нийтлэг кабельтай байж болно. Энэ нь ECMP, flow hashing эсвэл бодит queue/capacity загвар биш; packet reordering болон throughput-ийн өөрчлөлт хэмжихгүй. Өөр замгүй үед нэг замаар явж, боломжгүйг харуулна.
 
 `balancedPaths` нь Dijkstra-аар эхний замыг олоод түүний кабель тус бүрийг хассан граф дээр дахин тооцож хамгийн бага хугацаатай өөр маршрутыг сонгоно. Замын RTT, хотын дараалал, cumulative hop RTT, physical length тусдаа хадгалагдана. Зам 1/2 нь тус бүр 50% буюу batch-ийн нэг пакет. Нийт RTT-г хоёр замын minimum мэтээр үзүүлэхгүй. Clear, cut/restore, endpoint/topology/page/latency changes нь бүх batch-ийг цуцална.
+
+### Backend Round Robin
+
+`backend/app/algorithms/round_robin.py` is used by the local `POST /api/planning/load-balance` endpoint, not only the teaching demo. The request supplies a graph, topology, endpoints, cut cables, per-cable congestion, packet_count (0–1000), and a nonnegative start_index. The response includes latency routes, per-packet path assignments, per-route counts and next_index. Cursors are request-scoped. Local UI consumes those paths and assignments; static Vercel or an offline API uses `frontend/src/roundRobin.ts`. The Python backend is not deployed on static Vercel. `tests/load_balance.mjs` compares the two implementations, including odd packet batches and continuation cursors.
+
+```bash
+.venv/bin/python -m backend.app.algorithms.demo --algorithm round_robin
+```

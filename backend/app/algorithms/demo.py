@@ -9,6 +9,7 @@ Lengths below are teaching examples, not geographic measurements.
 
 import argparse
 
+from .round_robin import round_robin
 from .kruskal import kruskal_mst
 from .tarjan import tarjan_bridges
 from .dijkstra import dijkstra
@@ -24,7 +25,7 @@ EDGES = [
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--algorithm', choices=['all', 'kruskal', 'tarjan', 'dijkstra', 'greedy'], default='all')
+    parser.add_argument('--algorithm', choices=['all', 'kruskal', 'tarjan', 'dijkstra', 'greedy', 'round_robin'], default='all')
     choice = parser.parse_args().algorithm
     tree = kruskal_mst(NODES, EDGES)
     print('Жишээ: A--B = 2 км, B--C = 3 км, A--C = 4 км.\n')
@@ -56,6 +57,14 @@ def main():
         print('Үлдсэн гүүр:', tarjan_bridges(NODES, result['edges'])['bridges'])
         print('Гурван хот холбоотой, нэг кабелийн тасралтад тэсвэртэй.')
         print('Энэ нь heuristic; глобал minimum cost баталгаа биш.')
+
+    if choice in ('all', 'round_robin'):
+        print('5. Round Robin — пакетуудыг хоёр замд ээлжлэн хуваарилах')
+        result = round_robin(['Зам 1', 'Зам 2'], packet_count=6)
+        for packet in result['packets']:
+            print(f"Пакет {packet['packet']} → {packet['path_id']}")
+        print('Хуваарилалт:', result['counts'])
+        print('Dijkstra замуудыг олно; Round Robin пакетыг хуваарилна.')
 
 
 if __name__ == '__main__':

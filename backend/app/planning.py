@@ -6,7 +6,7 @@ import re
 import networkx as nx
 
 # Public aliases preserve existing API callers while the actual algorithms live
-# in four readable modules used by this planner (not duplicate demonstration code).
+# in readable modules used by this planner (not duplicate demonstration code).
 from .algorithms.common import pair, edge_order as order
 from .algorithms.kruskal import kruskal_mst as mst
 from .algorithms.tarjan import tarjan_bridges as tarjan
