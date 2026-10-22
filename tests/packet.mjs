@@ -78,3 +78,27 @@ assert.deepEqual(packetHopPair(satellite.route,1,true),{current:'c',next:SATELLI
 assert.deepEqual(packetHopPair(satellite.route,0,true),{current:SATELLITE_ID,next:'a'});
 assert.equal(packetHopPair(satellite.route,null),null);
 console.log('PASS: two-failure Starlink policy, restoration, assumed RTT, unchanged cable graph, satellite geometry and both hop directions');
+
+const {congestedRoute,randomCongestion,latencyEdges}=await import('../frontend/src/congestion.ts');
+const {dijkstraTrace}=await import('../frontend/src/walkthrough.ts');
+const triangle={...graph,edges:[...graph.edges,{id:'ac',u:'a',v:'c',length_km:8}]};
+const beforeTraffic=JSON.stringify(triangle);
+const normal=congestedRoute(triangle.nodes,triangle.edges,'a','c',{});
+assert.deepEqual(normal.route,['a','b','c']);assert.equal(normal.rtt,.05);
+const loaded=congestedRoute(triangle.nodes,triangle.edges,'a','c',{ab:20});
+assert.deepEqual(loaded.route,['a','c']);assert.equal(loaded.lengthKm,8);assert.equal(loaded.rtt,.08);
+assert.equal(loaded.originalRtt,20.05);assert(loaded.rerouted);assert(Math.abs(loaded.savedMs-19.97)<1e-9);
+assert.equal(loaded.hopRtts.get('c'),.08);assert.equal(JSON.stringify(triangle),beforeTraffic);
+assert.deepEqual(congestedRoute(triangle.nodes,triangle.edges,'a','c',{}),normal);
+const noAlternative=congestedRoute(graph.nodes,graph.edges,'a','c',{ab:20});
+assert.deepEqual(noAlternative.route,['a','b','c']);assert.equal(noAlternative.rerouted,false);assert.equal(noAlternative.savedMs,0);
+assert.equal(congestedRoute(graph.nodes,[],'a','c',{ab:20}).rtt,null);
+assert.equal(congestedRoute(graph.nodes,graph.edges,'a','a',{ab:20}).rtt,0);
+const weightedSteps=dijkstraTrace(triangle,latencyEdges(triangle.edges,{ab:20}),'a','c','ms');
+assert.deepEqual(weightedSteps.at(-1).edgeIds,loaded.routeEdges);assert.equal(weightedSteps.at(-1).distances.c,loaded.rtt);
+assert.deepEqual(randomCongestion([],()=>0),{});assert.deepEqual(randomCongestion(triangle.edges,()=>0),{ab:10});
+const sample=randomCongestion(triangle.edges,()=>.999);
+assert.equal(Object.keys(sample).length,3);for(const [id,ms] of Object.entries(sample)){assert(triangle.edges.some(e=>e.id===id));assert(ms>=10&&ms<=40)}
+const override=packetTransport(triangle,'resilient',['ab','bc'],'a','c',loaded.route,loaded.routeEdges,loaded.rtt);
+assert(override.satellite);assert.equal(override.rtt,60);
+console.log('PASS: congestion time-weighted rerouting, original-route comparison, clearing, no alternative, disconnected routes, sampling, walkthrough parity and satellite priority');
