@@ -5,9 +5,15 @@ import math
 import re
 import networkx as nx
 
+# Public aliases preserve existing API callers while the actual algorithms live
+# in four readable modules used by this planner (not duplicate demonstration code).
+from .algorithms.common import pair, edge_order as order
+from .algorithms.kruskal import kruskal_mst as mst
+from .algorithms.tarjan import tarjan_bridges as tarjan
+from .algorithms.dijkstra import dijkstra as shortest
+from .algorithms.greedy_augmentation import augment_to_two_edge_connected
+
 KINDS=('mst','resilient','mesh')
-def pair(u,v):return '--'.join(sorted((u,v)))
-def order(e):return (e['length_km'],pair(e['u'],e['v']),e['id'])
 def finite(x):return isinstance(x,(float,int)) and not isinstance(x,bool) and math.isfinite(x)
 def validate(data):
     if not isinstance(data,dict) or not isinstance(data.get('nodes'),list) or not isinstance(data.get('edges'),list):raise ValueError('Хот ба кабелийн жагсаалт шаардлагатай.')
@@ -38,69 +44,19 @@ def graph(nodes,edges):
     g=nx.Graph();g.add_nodes_from(sorted(n['id'] for n in nodes))
     for e in sorted(edges,key=lambda e:e['id']):g.add_edge(e['u'],e['v'],length=e['length_km'],id=e['id'])
     return g
-def tarjan(nodes,edges):
-    adj={n['id']:[] for n in nodes}
-    for e in edges:
-        adj[e['u']].append((e['v'],e['id']));adj[e['v']].append((e['u'],e['id']))
-    for ns in adj.values():ns.sort()
-    discovery={};low={};bridges=[];clock=0
-    def visit(u,parent=None):
-        nonlocal clock
-        clock+=1;discovery[u]=low[u]=clock
-        for v,eid in adj[u]:
-            if eid==parent:continue
-            if v not in discovery:
-                visit(v,eid);low[u]=min(low[u],low[v])
-                if low[v]>discovery[u]:bridges.append(eid)
-            else:low[u]=min(low[u],discovery[v])
-    for u in sorted(adj):
-        if u not in discovery:visit(u)
-    return dict(bridges=sorted(bridges),discovery=discovery,low=low)
-def mst(nodes,edges):
-    parent={n['id']:n['id'] for n in nodes}
-    def find(x):
-        if parent[x]!=x:parent[x]=find(parent[x])
-        return parent[x]
-    out=[]
-    for e in sorted(edges,key=order):
-        a,b=find(e['u']),find(e['v'])
-        if a!=b:parent[a]=b;out.append(e)
-    return out
 def designs(data):
-    nodes,edges=data['nodes'],data['edges'];tree=mst(nodes,edges);selected=list(tree);used={e['id'] for e in tree};bridges=tarjan(nodes,selected)['bridges'];additions=[]
-    while bridges:
-        best=None
-        for e in sorted(edges,key=order):
-            if e['id'] in used:continue
-            eliminated=len(bridges)-len(tarjan(nodes,selected+[e])['bridges'])
-            if eliminated<=0:continue
-            candidate=(e['length_km']/eliminated,*order(e))
-            if best is None or candidate<best[0]:best=(candidate,e,eliminated)
-        if best is None:break
-        score,e,eliminated=best;selected.append(e);used.add(e['id']);additions.append(dict(edge_id=e['id'],eliminated=eliminated,score=score[0]));bridges=tarjan(nodes,selected)['bridges']
-    return dict(mst=sorted(tree,key=lambda e:e['id']),resilient=sorted(selected,key=lambda e:e['id']),mesh=list(edges),additions=additions)
-def shortest(nodes,edges,source,destination=None):
-    # Explicit stable Dijkstra predecessor policy matches the browser; reference
-    # distances are cross-checked against NetworkX in the test suite.
-    adj={n['id']:[] for n in nodes}
-    for e in edges:
-        adj[e['u']].append((e['v'],e['id'],e['length_km']));adj[e['v']].append((e['u'],e['id'],e['length_km']))
-    for ns in adj.values():ns.sort()
-    ids=sorted(adj);dist={sid:math.inf for sid in ids};previous={};todo=set(ids)
-    if source in adj:dist[source]=0
-    while todo:
-        u=min(todo,key=lambda sid:(dist[sid],sid))
-        if not math.isfinite(dist[u]):break
-        todo.remove(u)
-        for v,eid,length in adj[u]:
-            new=dist[u]+length
-            if new<dist[v]:dist[v]=new;previous[v]=(u,eid)
-    route=[];route_edges=[]
-    if destination in dist and math.isfinite(dist[destination]):
-        u=destination;route=[u]
-        while u!=source:
-            u,eid=previous[u];route.insert(0,u);route_edges.insert(0,eid)
-    return dict(dist=dist,route=route,route_edges=route_edges,length_km=dist[destination] if destination in dist and math.isfinite(dist[destination]) else None)
+    """Combine the four algorithms into the three comparison topologies."""
+    nodes, edges = data['nodes'], data['edges']
+    tree = mst(nodes, edges)
+    protected = augment_to_two_edge_connected(nodes, edges, tree)
+    return {
+        'mst': sorted(tree, key=lambda edge: edge['id']),
+        'resilient': sorted(protected['edges'], key=lambda edge: edge['id']),
+        'mesh': list(edges),
+        'additions': protected['additions'],
+    }
+
+
 def metrics(nodes,edges,source,destination):
     g=graph(nodes,edges);connected=len(nodes)>0 and nx.number_connected_components(g)==1;dfs=tarjan(nodes,edges);ids=sorted(g);max_distance=0;max_pair=None;unreachable_pairs=0
     # NetworkX provides the all-pairs shortest distances; positive edge lengths.

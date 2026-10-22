@@ -83,3 +83,31 @@ def test_multiple_failures_and_independent_verification():
     with TestClient(app,base_url='http://127.0.0.1:8000') as client:
         response=client.post('/api/planning/analyze',json=dict(graph=d,topology='mesh',source='0',destination='2',failed_id=['0--1','0--2']))
         assert response.status_code==200 and not response.json()['current']['connected']
+
+
+def test_planner_uses_separate_algorithm_modules():
+    from backend.app.algorithms.kruskal import kruskal_mst
+    from backend.app.algorithms.tarjan import tarjan_bridges
+    from backend.app.algorithms.dijkstra import dijkstra
+    from backend.app.algorithms.greedy_augmentation import augment_to_two_edge_connected
+    assert planning.mst is kruskal_mst
+    assert planning.tarjan is tarjan_bridges
+    assert planning.shortest is dijkstra
+    d = dataset(3, [(0, 1, 2), (1, 2, 3), (0, 2, 4)])
+    tree = kruskal_mst(d['nodes'], d['edges'])
+    before = [dict(edge) for edge in tree]
+    result = augment_to_two_edge_connected(d['nodes'], d['edges'], tree)
+    assert tree == before  # Adding redundancy must not mutate the MST.
+    assert result['additions'] == [{'edge_id': '0--2', 'eliminated': 2, 'score': 2.0}]
+    assert not tarjan_bridges(d['nodes'], result['edges'])['bridges']
+    assert planning.designs(d)['resilient'] == sorted(result['edges'], key=lambda e: e['id'])
+
+
+def test_classroom_example_runs():
+    import subprocess, sys
+    result = subprocess.run([sys.executable, '-m', 'backend.app.algorithms.demo'],
+                            capture_output=True, text=True, check=True)
+    for label in ['1. Kruskal', '2. Tarjan', '3. Dijkstra', '4. Greedy']:
+        assert label in result.stdout
+    assert 'a → c = 4 км' in result.stdout
+    assert 'a → b → c = 5 км' in result.stdout

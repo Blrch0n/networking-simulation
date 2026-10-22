@@ -34,6 +34,22 @@ make stop             # Зөвхөн төслийн Uvicorn серверийг �
 
 Дэлгэрэнгүй дараалал: [docs/DEMO_GUIDE_MN.md](docs/DEMO_GUIDE_MN.md).
 
+## Алгоритмын Python кодыг багшид үзүүлэх
+
+Дөрвөн алгоритм тусдаа, уншихад хялбар Монгол тайлбартай файлд байна:
+
+- [Kruskal](backend/app/algorithms/kruskal.py)
+- [Tarjan](backend/app/algorithms/tarjan.py)
+- [Dijkstra](backend/app/algorithms/dijkstra.py)
+- [Greedy augmentation heuristic](backend/app/algorithms/greedy_augmentation.py)
+
+Локал simulation нь эдгээрийг `backend/app/planning.py`-аар дамжуулан ашиглана.
+Тусдаа хуулбар implementation биш. [Товч заавар](backend/app/algorithms/README_MN.md).
+
+```bash
+.venv/bin/python -m backend.app.algorithms.demo
+```
+
 ## Алгоритм ба шинэ үр дүн
 
 - Kruskal нь **байгаа бүх боломжит кабелиас** уртаар MST олно. Салангид оролтод модны ой; холбогдсон төсөл гэж зарлахгүй.
